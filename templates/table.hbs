@@ -1,0 +1,239 @@
+{{#if empty}}
+<div class="dinn-table-empty">
+  <p>Table not found. It may have been closed by the GM.</p>
+</div>
+{{else}}
+<div class="dinn-table" data-game-type="{{gameType}}" data-phase="{{phase}}">
+
+  <!-- ─── Top Bar ──────────────────────────────────────────────────────── -->
+  <div class="dinn-topbar">
+    <span class="dinn-game-label">{{gameLabel}}</span>
+    <span class="dinn-phase-label">{{phaseLabel}}</span>
+    <span class="dinn-pot">Pot: <strong>{{pot}}</strong> chips</span>
+  </div>
+
+  <!-- ─── Felt / Main Play Area ────────────────────────────────────────── -->
+  <div class="dinn-felt">
+
+    <!-- DEALER / COMMUNITY CARD ZONE -->
+    <div class="dinn-dealer-zone">
+
+      {{!-- Blackjack: show dealer hand --}}
+      {{#if (eq gameType "blackjack")}}
+      <div class="dinn-dealer-label">
+        <i class="fas fa-user-tie"></i> Dealer
+        {{#if isGM}}
+        <span class="dinn-hand-value">
+          {{#each dealerCards}}{{#unless faceDown}}{{../dealerValue}}{{/unless}}{{/each}}
+        </span>
+        {{/if}}
+      </div>
+      <div class="dinn-card-row dinn-dealer-cards">
+        {{#each dealerCards}}
+        <div class="dinn-card-slot">
+          {{#if faceDown}}
+          <img class="playing-card face-down" src="{{imgSrc}}" alt="Hidden card" draggable="false">
+          {{else}}
+          <img class="playing-card" src="{{imgSrc}}" alt="{{altText}}" draggable="false">
+          {{/if}}
+        </div>
+        {{/each}}
+        {{#if (eq (length dealerCards) 0)}}
+        <img class="playing-card card-placeholder" src="{{../cardBlankImg}}" alt="" draggable="false">
+        <img class="playing-card card-placeholder" src="{{../cardBlankImg}}" alt="" draggable="false">
+        {{/if}}
+      </div>
+      {{/if}}
+
+      {{!-- Poker: show community cards --}}
+      {{#if (eq gameType "poker")}}
+      <div class="dinn-community-label">
+        <i class="fas fa-border-all"></i> Community Cards
+        {{#if street}}<span class="dinn-street-label">— {{street}}</span>{{/if}}
+      </div>
+      <div class="dinn-card-row dinn-community-cards">
+        {{#each communityCards}}
+        <img class="playing-card" src="{{imgSrc}}" alt="{{altText}}" draggable="false">
+        {{/each}}
+        {{!-- Empty placeholder slots (5 total for poker) --}}
+        {{#times (subtract 5 (length communityCards))}}
+        <img class="playing-card card-placeholder" src="{{../cardBlankImg}}" alt="" draggable="false">
+        {{/times}}
+      </div>
+      {{/if}}
+
+      {{!-- High Card: nothing in dealer zone --}}
+      {{#if (eq gameType "highcard")}}
+      <div class="dinn-highcard-label">
+        <i class="fas fa-star"></i> High Card — Highest card wins the pot
+      </div>
+      {{/if}}
+
+    </div><!-- /.dinn-dealer-zone -->
+
+    <!-- ─── Player Seats ──────────────────────────────────────────────── -->
+    <div class="dinn-player-seats" data-seat-count="{{players.length}}">
+
+      {{#each players}}
+      <div class="dinn-player-seat {{#if isActive}}active-turn{{/if}} {{#if isMe}}my-seat{{/if}} status-{{status}}"
+           data-user-id="{{userId}}" data-seat-index="{{seatIndex}}">
+
+        <div class="dinn-seat-header">
+          <span class="dinn-player-name">
+            {{userName}}
+            {{#if isMe}}<span class="dinn-me-badge">You</span>{{/if}}
+          </span>
+          {{#if isActive}}
+          <span class="dinn-your-turn-badge"><i class="fas fa-clock"></i> Your Turn</span>
+          {{/if}}
+        </div>
+
+        <!-- Player's cards -->
+        <div class="dinn-card-row dinn-player-cards">
+          {{#each displayCards}}
+          <div class="dinn-card-slot">
+            <img class="playing-card {{#if faceDown}}face-down{{/if}}"
+                 src="{{imgSrc}}" alt="{{altText}}" draggable="false">
+          </div>
+          {{/each}}
+          {{#if (eq (length displayCards) 0)}}
+          <img class="playing-card card-placeholder" src="{{../../cardBlankImg}}" alt="" draggable="false">
+          {{/if}}
+        </div>
+
+        <!-- Chips + bet -->
+        <div class="dinn-seat-footer">
+          <span class="dinn-chips"><i class="fas fa-coins"></i> {{chips}}</span>
+          {{#if currentBet}}
+          <span class="dinn-bet">Bet: {{currentBet}}</span>
+          {{/if}}
+          {{#if handValue}}
+          <span class="dinn-hand-value">{{handValue}}</span>
+          {{/if}}
+          {{#if (eq status "won")}}<span class="dinn-result won">Winner!</span>{{/if}}
+          {{#if (eq status "bust")}}<span class="dinn-result bust">Bust</span>{{/if}}
+          {{#if (eq status "push")}}<span class="dinn-result push">Push</span>{{/if}}
+          {{#if (eq status "folded")}}<span class="dinn-result folded">Folded</span>{{/if}}
+        </div>
+      </div>
+      {{/each}}
+
+      {{!-- Empty / available seats --}}
+      {{#if (and (lt (length players) 4) (or (eq phase "lobby") (eq phase "betting")))}}
+      {{#if actions.showSit}}
+      <div class="dinn-player-seat empty-seat">
+        <div class="dinn-empty-seat-inner">
+          <i class="fas fa-chair"></i>
+          <button type="button" data-action="sitDown">Sit Down</button>
+        </div>
+      </div>
+      {{/if}}
+      {{/if}}
+
+    </div><!-- /.dinn-player-seats -->
+
+  </div><!-- /.dinn-felt -->
+
+  <!-- ─── Action Bar ─────────────────────────────────────────────────── -->
+  <div class="dinn-action-bar">
+
+    <!-- Bet Input (shown during betting phase) -->
+    {{#if actions.showBet}}
+    <div class="dinn-bet-controls">
+      <label>Your bet:</label>
+      <input class="bet-input" type="number" min="1" value="{{#if myPlayer}}{{myPlayer.chips}}{{else}}10{{/if}}" max="{{#if myPlayer}}{{myPlayer.chips}}{{else}}999{{/if}}">
+      <button type="button" data-action="placeBet" class="dinn-btn-primary">
+        <i class="fas fa-coins"></i> Place Bet
+      </button>
+    </div>
+    {{/if}}
+
+    <!-- Blackjack Player Actions -->
+    {{#if actions.showHit}}
+    <button type="button" data-action="hit" class="dinn-btn-action">
+      <i class="fas fa-plus"></i> Hit
+    </button>
+    {{/if}}
+    {{#if actions.showStand}}
+    <button type="button" data-action="stand" class="dinn-btn-action">
+      <i class="fas fa-hand-paper"></i> Stand
+    </button>
+    {{/if}}
+    {{#if actions.showDouble}}
+    <button type="button" data-action="double" class="dinn-btn-action">
+      <i class="fas fa-angle-double-up"></i> Double Down
+    </button>
+    {{/if}}
+
+    <!-- Poker Player Actions -->
+    {{#if actions.showCheck}}
+    <button type="button" data-action="check" class="dinn-btn-action">
+      <i class="fas fa-check"></i> Check
+    </button>
+    {{/if}}
+    {{#if actions.showCall}}
+    <button type="button" data-action="call" class="dinn-btn-action">
+      <i class="fas fa-equals"></i> Call {{canCall}}
+    </button>
+    {{/if}}
+    {{#if actions.showRaise}}
+    <button type="button" data-action="raise" class="dinn-btn-action">
+      <i class="fas fa-arrow-up"></i> Raise
+    </button>
+    {{/if}}
+    {{#if actions.showFold}}
+    <button type="button" data-action="fold" class="dinn-btn-danger">
+      <i class="fas fa-times"></i> Fold
+    </button>
+    {{/if}}
+
+    <!-- GM Controls -->
+    {{#if isGM}}
+    <div class="dinn-gm-controls">
+      {{#if actions.showDeal}}
+      <button type="button" data-action="deal" class="dinn-btn-primary">
+        <i class="fas fa-layer-group"></i> Deal
+      </button>
+      {{/if}}
+      {{#if actions.showRunDealer}}
+      <button type="button" data-action="runDealer" class="dinn-btn-primary">
+        <i class="fas fa-user-tie"></i> Run Dealer Hand
+      </button>
+      {{/if}}
+      {{#if actions.showDealFlop}}
+      <button type="button" data-action="dealFlop" class="dinn-btn-primary">
+        <i class="fas fa-cards"></i> Deal Flop
+      </button>
+      {{/if}}
+      {{#if actions.showDealTurn}}
+      <button type="button" data-action="dealTurn" class="dinn-btn-primary">
+        <i class="fas fa-cards"></i> Deal Turn
+      </button>
+      {{/if}}
+      {{#if actions.showDealRiver}}
+      <button type="button" data-action="dealRiver" class="dinn-btn-primary">
+        <i class="fas fa-cards"></i> Deal River
+      </button>
+      {{/if}}
+      {{#if actions.showShowdown}}
+      <button type="button" data-action="showdown" class="dinn-btn-warning">
+        <i class="fas fa-trophy"></i> Showdown
+      </button>
+      {{/if}}
+      {{#if actions.showNewHand}}
+      <button type="button" data-action="newHand" class="dinn-btn-primary">
+        <i class="fas fa-redo"></i> New Hand
+      </button>
+      {{/if}}
+      {{#if actions.showDistribute}}
+      <button type="button" data-action="distributeChips" class="dinn-btn-secondary">
+        <i class="fas fa-coins"></i> Chips
+      </button>
+      {{/if}}
+    </div>
+    {{/if}}
+
+  </div><!-- /.dinn-action-bar -->
+
+</div><!-- /.dinn-table -->
+{{/if}}

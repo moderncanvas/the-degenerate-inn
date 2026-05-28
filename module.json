@@ -1,0 +1,30 @@
+{
+  "id": "the-degenerate-inn",
+  "title": "The Degenerate Inn",
+  "description": "A gambling hall for Foundry VTT. High Card, Blackjack, and Texas Hold'em — with virtual chips or real gold. Pull up a stool.",
+  "authors": [
+    {
+      "name": "Jeremy",
+      "discord": ""
+    }
+  ],
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/degenerate-inn.css"
+  ],
+  "socket": true,
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+ 

@@ -1,0 +1,43 @@
+<div class="dinn-lobby">
+  <div class="dinn-lobby-header">
+    <i class="fas fa-diamond"></i>
+    <h2>The Degenerate Inn</h2>
+    <p class="dinn-subtitle">Pull up a stool. The cards don't care who you are.</p>
+  </div>
+
+  {{#if hasTables}}
+  <div class="dinn-table-list">
+    {{#each tables}}
+    <div class="dinn-table-entry" data-table-id="{{tableId}}" data-journal-id="{{journalId}}">
+      <div class="dinn-table-info">
+        <span class="dinn-game-label">{{gameLabel}}</span>
+        <span class="dinn-player-count">{{playerText}}</span>
+      </div>
+      <div class="dinn-table-actions">
+        <button type="button" data-action="joinTable">
+          <i class="fas fa-sign-in-alt"></i> Join
+        </button>
+        {{#if canDelete}}
+        <button type="button" class="dinn-btn-danger" data-action="deleteTable">
+          <i class="fas fa-times"></i>
+        </button>
+        {{/if}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  {{else}}
+  <div class="dinn-no-tables">
+    <i class="fas fa-door-closed" style="font-size:2em;opacity:0.4;"></i>
+    <p>No tables running.<br>{{#if isGM}}Create one below.{{else}}Ask the GM to open a table.{{/if}}</p>
+  </div>
+  {{/if}}
+
+  {{#if isGM}}
+  <div class="dinn-lobby-footer">
+    <button type="button" data-action="createTable" class="dinn-btn-primary">
+      <i class="fas fa-plus"></i> Create New Table
+    </button>
+  </div>
+  {{/if}}
+</div>

@@ -1,0 +1,556 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   The Degenerate Inn — Styles
+   Dark green felt, card shadows, chip glints. The whole deal.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Color Palette ─────────────────────────────────────────────────────── */
+:root {
+  --dinn-felt:          #1a4731;
+  --dinn-felt-dark:     #112e20;
+  --dinn-felt-light:    #235c3d;
+  --dinn-gold:          #c9a84c;
+  --dinn-gold-light:    #e8c76a;
+  --dinn-card-white:    #fefefe;
+  --dinn-chip-red:      #cc2222;
+  --dinn-chip-blue:     #1a44cc;
+  --dinn-border:        #0d2118;
+  --dinn-text-light:    #e8f5ee;
+  --dinn-text-muted:    #8ab89a;
+  --dinn-won:           #4caf50;
+  --dinn-lost:          #e53935;
+  --dinn-push:          #fb8c00;
+  --dinn-active-glow:   rgba(201, 168, 76, 0.6);
+}
+
+/* ─── Window Chrome ──────────────────────────────────────────────────────── */
+.degenerate-inn.application {
+  font-family: "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+.degenerate-inn .window-content {
+  padding: 0;
+  background: var(--dinn-felt-dark);
+  color: var(--dinn-text-light);
+  overflow: hidden;
+}
+
+/* ─── Lobby ──────────────────────────────────────────────────────────────── */
+.dinn-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 200px;
+  background: var(--dinn-felt-dark);
+  color: var(--dinn-text-light);
+}
+
+.dinn-lobby-header {
+  background: linear-gradient(135deg, #0d2118 0%, #1a4731 100%);
+  padding: 20px;
+  text-align: center;
+  border-bottom: 2px solid var(--dinn-gold);
+}
+
+.dinn-lobby-header h2 {
+  margin: 0 0 4px;
+  color: var(--dinn-gold);
+  font-size: 1.5em;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: none;
+}
+
+.dinn-subtitle {
+  margin: 0;
+  color: var(--dinn-text-muted);
+  font-style: italic;
+  font-size: 0.85em;
+}
+
+.dinn-table-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--dinn-border);
+  flex: 1;
+}
+
+.dinn-table-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--dinn-felt);
+  transition: background 0.15s;
+}
+
+.dinn-table-entry:hover {
+  background: var(--dinn-felt-light);
+}
+
+.dinn-table-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dinn-game-label {
+  font-size: 1em;
+  font-weight: bold;
+  color: var(--dinn-gold);
+  letter-spacing: 1px;
+}
+
+.dinn-player-count {
+  font-size: 0.8em;
+  color: var(--dinn-text-muted);
+}
+
+.dinn-table-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.dinn-no-tables {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: var(--dinn-text-muted);
+  text-align: center;
+}
+
+.dinn-lobby-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--dinn-border);
+  background: var(--dinn-felt-dark);
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.dinn-btn-primary,
+.dinn-btn-secondary,
+.dinn-btn-danger,
+.dinn-btn-warning,
+.dinn-btn-action,
+.dinn-lobby button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85em;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+
+.dinn-btn-primary {
+  background: linear-gradient(135deg, #1e6e40, #28a459);
+  border-color: var(--dinn-gold);
+  color: var(--dinn-gold-light);
+}
+.dinn-btn-primary:hover {
+  background: linear-gradient(135deg, #28a459, #35c96e);
+  box-shadow: 0 0 8px var(--dinn-active-glow);
+}
+
+.dinn-btn-secondary {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--dinn-text-muted);
+  color: var(--dinn-text-light);
+}
+.dinn-btn-secondary:hover { background: rgba(255,255,255,0.15); }
+
+.dinn-btn-danger {
+  background: rgba(204, 34, 34, 0.2);
+  border-color: var(--dinn-chip-red);
+  color: #ff8080;
+}
+.dinn-btn-danger:hover { background: rgba(204, 34, 34, 0.4); }
+
+.dinn-btn-warning {
+  background: rgba(251, 140, 0, 0.2);
+  border-color: #fb8c00;
+  color: #ffb74d;
+}
+.dinn-btn-warning:hover { background: rgba(251, 140, 0, 0.4); }
+
+.dinn-btn-action {
+  background: linear-gradient(135deg, #1a3d5c, #246090);
+  border-color: #4a9fd4;
+  color: #b3e0ff;
+  padding: 8px 18px;
+  font-size: 0.95em;
+}
+.dinn-btn-action:hover {
+  background: linear-gradient(135deg, #246090, #2e7ab8);
+  box-shadow: 0 0 10px rgba(74, 159, 212, 0.5);
+}
+
+/* ─── Table App ──────────────────────────────────────────────────────────── */
+.dinn-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--dinn-felt-dark);
+  color: var(--dinn-text-light);
+}
+
+/* Top Bar */
+.dinn-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #0d2118, #1a4731);
+  border-bottom: 2px solid var(--dinn-gold);
+  font-size: 0.9em;
+}
+
+.dinn-topbar .dinn-game-label {
+  font-size: 1em;
+  color: var(--dinn-gold);
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.dinn-topbar .dinn-phase-label {
+  color: var(--dinn-text-muted);
+  font-style: italic;
+}
+
+.dinn-topbar .dinn-pot {
+  margin-left: auto;
+  color: var(--dinn-gold-light);
+  font-size: 1em;
+}
+
+/* Felt / Play Area */
+.dinn-felt {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, var(--dinn-felt-light) 0%, var(--dinn-felt) 50%, var(--dinn-felt-dark) 100%);
+  overflow-y: auto;
+}
+
+/* Dealer / Community Zone */
+.dinn-dealer-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 8px;
+  min-height: 120px;
+}
+
+.dinn-dealer-label,
+.dinn-community-label,
+.dinn-highcard-label {
+  font-size: 0.8em;
+  color: var(--dinn-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dinn-street-label {
+  color: var(--dinn-gold);
+  font-style: italic;
+  text-transform: none;
+}
+
+/* Card Rows */
+.dinn-card-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* ─── Playing Cards ──────────────────────────────────────────────────────── */
+.playing-card {
+  width: 68px;
+  height: 102px;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: block;
+  flex-shrink: 0;
+}
+
+.playing-card:not(.card-placeholder):not(.face-down):hover {
+  transform: translateY(-4px);
+  box-shadow: 2px 8px 20px rgba(0, 0, 0, 0.7);
+}
+
+.playing-card.face-down {
+  filter: brightness(0.9);
+}
+
+.playing-card.card-placeholder {
+  opacity: 0.25;
+  filter: brightness(0.5);
+}
+
+.dinn-card-slot {
+  position: relative;
+}
+
+/* ─── Player Seats ───────────────────────────────────────────────────────── */
+.dinn-player-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.dinn-player-seat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 8px;
+  min-width: 140px;
+  max-width: 200px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dinn-player-seat.my-seat {
+  border-color: rgba(201, 168, 76, 0.5);
+}
+
+.dinn-player-seat.active-turn {
+  border-color: var(--dinn-gold);
+  box-shadow: 0 0 16px var(--dinn-active-glow);
+  animation: dinn-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dinn-pulse {
+  0%, 100% { box-shadow: 0 0 12px var(--dinn-active-glow); }
+  50%       { box-shadow: 0 0 24px var(--dinn-active-glow); }
+}
+
+.dinn-player-seat.empty-seat {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.dinn-empty-seat-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  color: var(--dinn-text-muted);
+  font-size: 0.85em;
+}
+
+.dinn-seat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.dinn-player-name {
+  font-weight: bold;
+  font-size: 0.9em;
+  color: var(--dinn-text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dinn-me-badge {
+  font-size: 0.65em;
+  background: var(--dinn-gold);
+  color: #0d2118;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.dinn-your-turn-badge {
+  font-size: 0.65em;
+  background: var(--dinn-gold);
+  color: #0d2118;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+  animation: dinn-badge-pulse 1s ease-in-out infinite;
+}
+
+@keyframes dinn-badge-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+.dinn-player-cards {
+  justify-content: flex-start;
+}
+
+.dinn-seat-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8em;
+  flex-wrap: wrap;
+}
+
+.dinn-chips {
+  color: var(--dinn-gold);
+  font-weight: bold;
+}
+
+.dinn-bet {
+  color: var(--dinn-text-muted);
+}
+
+.dinn-hand-value {
+  background: rgba(0,0,0,0.4);
+  color: var(--dinn-gold-light);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.85em;
+  font-weight: bold;
+}
+
+/* Result badges */
+.dinn-result {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.dinn-result.won    { background: var(--dinn-won);  color: #fff; }
+.dinn-result.bust   { background: var(--dinn-lost); color: #fff; }
+.dinn-result.push   { background: var(--dinn-push); color: #fff; }
+.dinn-result.folded { background: rgba(255,255,255,0.1); color: var(--dinn-text-muted); }
+
+/* Status tinting */
+.dinn-player-seat.status-won    { border-color: var(--dinn-won); }
+.dinn-player-seat.status-bust   { border-color: var(--dinn-lost); opacity: 0.7; }
+.dinn-player-seat.status-folded { opacity: 0.5; }
+.dinn-player-seat.status-push   { border-color: var(--dinn-push); }
+
+/* ─── Action Bar ─────────────────────────────────────────────────────────── */
+.dinn-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: linear-gradient(0deg, #0a1a10, #0d2118);
+  border-top: 2px solid var(--dinn-gold);
+  min-height: 54px;
+}
+
+.dinn-bet-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dinn-bet-controls label {
+  color: var(--dinn-text-muted);
+  font-size: 0.85em;
+}
+
+.dinn-bet-controls .bet-input {
+  width: 80px;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--dinn-gold);
+  border-radius: 4px;
+  color: var(--dinn-gold-light);
+  font-family: inherit;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+.dinn-gm-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+/* ─── Chat messages ──────────────────────────────────────────────────────── */
+.degenerate-inn-chat {
+  padding: 4px 8px;
+  background: rgba(26, 71, 49, 0.3);
+  border-left: 3px solid var(--dinn-gold);
+  border-radius: 2px;
+  font-style: italic;
+  color: var(--dinn-gold-light);
+}
+
+.degenerate-inn-chat i {
+  color: var(--dinn-gold);
+  margin-right: 4px;
+}
+
+/* ─── Sidebar button ─────────────────────────────────────────────────────── */
+.dinn-open-btn {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 4px 8px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #1a4731, #28724d);
+  border: 1px solid var(--dinn-gold);
+  border-radius: 4px;
+  color: var(--dinn-gold);
+  font-family: inherit;
+  font-size: 0.85em;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.dinn-open-btn:hover {
+  background: linear-gradient(135deg, #28724d, #35986a);
+  box-shadow: 0 0 8px var(--dinn-active-glow);
+  color: var(--dinn-gold-light);
+}
+
+/* ─── Misc ───────────────────────────────────────────────────────────────── */
+.dinn-table-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--dinn-text-muted);
+  font-style: italic;
+  padding: 40px;
+  text-align: center;
+}
+
+/* Scrollbar inside felt */
+.dinn-felt::-webkit-scrollbar        { width: 6px; }
+.dinn-felt::-webkit-scrollbar-track  { background: transparent; }
+.dinn-felt::-webkit-scrollbar-thumb  { background: rgba(201, 168, 76, 0.3); border-radius: 3px; }
