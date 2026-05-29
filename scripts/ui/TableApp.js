@@ -281,7 +281,11 @@ export class TableApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     return {
       // GM controls
-      showDeal:       isGM && phase === GAME_PHASE.BETTING && state.players.length > 0,
+      // LOBBY → click Deal to open betting; BETTING → click Deal again once all bets are in to deal cards
+      showDeal: isGM && (
+        (phase === GAME_PHASE.LOBBY   && state.players.length > 0) ||
+        (phase === GAME_PHASE.BETTING && state.players.length > 0 && state.players.every(p => p.currentBet > 0))
+      ),
       showNewHand:    isGM && phase === GAME_PHASE.RESULTS,
       showRunDealer:  isGM && type === "blackjack" && phase === GAME_PHASE.SHOWDOWN,
       showDealFlop:   isGM && type === "poker" && phase === GAME_PHASE.SHOWDOWN && state.gameData?.street === POKER_STREET.PREFLOP,
@@ -460,6 +464,16 @@ export class TableApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!game.user.isGM) return;
     let state = await this._gameState.get();
 
+    // LOBBY → BETTING: first Deal click opens the betting round so players can place bets
+    if (state.phase === GAME_PHASE.LOBBY) {
+      state.phase = GAME_PHASE.BETTING;
+      await this._gameState.set(state);
+      ui.notifications.info("Betting is open — players may now place their bets.");
+      return;
+    }
+
+    if (state.phase !== GAME_PHASE.BETTING) return;
+
     // Reset hands for a clean deal
     const handIds = state.players.map(p => p.handId).filter(Boolean);
     await DeckManager.fullReset(state.deckId, handIds, [state.communityPileId].filter(Boolean));
@@ -607,24 +621,4 @@ export class TableApp extends HandlebarsApplicationMixin(ApplicationV2) {
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   /** Send a player action — to GM via socket if player, or handle locally if GM. */
-  _sendPlayerAction(action, amount = 0) {
-    const payload = { tableId: this._tableId, userId: game.userId, action, amount };
-    if (game.user.isGM) {
-      this._gmHandleAction(payload);
-    } else {
-      game.degenerateInn.socket.requestAction(payload);
-    }
-  }
-
-  _sendChatMessage(content) {
-    ChatMessage.create({
-      content: `<div class="degenerate-inn-chat"><i class="fas fa-diamond"></i> ${content}</div>`,
-      speaker: { alias: "The Degenerate Inn" },
-    });
-  }
-
-  _postChatUpdates(state) {
-    // Post any pending chat messages derived from state changes
-    // (called after action processing)
-  }
-}
+  _sen
