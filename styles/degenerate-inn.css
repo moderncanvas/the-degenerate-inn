@@ -45,8 +45,8 @@
 }
 
 .dinn-lobby-header {
-  background: linear-gradient(135deg, #0d2118 0%, #1a4731 100%);
-  background-image: url('../assets/ui/lobby-header.png');
+  background-image: url('/modules/the-degenerate-inn/assets/ui/lobby-header.png');
+  background-color: #0d2118;
   background-size: cover;
   background-position: center;
   padding: 20px;
@@ -254,10 +254,11 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background:
+  background-image:
     radial-gradient(ellipse at center, rgba(35, 92, 61, 0.88) 0%, rgba(26, 71, 49, 0.93) 50%, rgba(17, 46, 32, 0.97) 100%),
-    url('../assets/ui/felt-texture.png');
-  background-size: auto, 512px 512px;
+    url('/modules/the-degenerate-inn/assets/ui/felt-texture.png');
+  background-color: var(--dinn-felt-dark);
+  background-size: 100% 100%, 512px 512px;
   background-repeat: no-repeat, repeat;
   overflow-y: auto;
 }
@@ -558,4 +559,4 @@
   color: var(--dinn-gold-light);
 }
 
-/* ─── Misc ────────────────────────────────────────────────────────────────�
+/* ─── Misc ──────────────────────────────────────────
