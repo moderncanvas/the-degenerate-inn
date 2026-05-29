@@ -46,9 +46,25 @@
 
 .dinn-lobby-header {
   background: linear-gradient(135deg, #0d2118 0%, #1a4731 100%);
+  background-image: url('../assets/ui/lobby-header.png');
+  background-size: cover;
+  background-position: center;
   padding: 20px;
   text-align: center;
   border-bottom: 2px solid var(--dinn-gold);
+  position: relative;
+}
+
+.dinn-lobby-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 20, 12, 0.72);
+}
+
+.dinn-lobby-header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .dinn-lobby-header h2 {
@@ -238,7 +254,11 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background: radial-gradient(ellipse at center, var(--dinn-felt-light) 0%, var(--dinn-felt) 50%, var(--dinn-felt-dark) 100%);
+  background:
+    radial-gradient(ellipse at center, rgba(35, 92, 61, 0.88) 0%, rgba(26, 71, 49, 0.93) 50%, rgba(17, 46, 32, 0.97) 100%),
+    url('../assets/ui/felt-texture.png');
+  background-size: auto, 512px 512px;
+  background-repeat: no-repeat, repeat;
   overflow-y: auto;
 }
 
@@ -538,19 +558,4 @@
   color: var(--dinn-gold-light);
 }
 
-/* ─── Misc ───────────────────────────────────────────────────────────────── */
-.dinn-table-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--dinn-text-muted);
-  font-style: italic;
-  padding: 40px;
-  text-align: center;
-}
-
-/* Scrollbar inside felt */
-.dinn-felt::-webkit-scrollbar        { width: 6px; }
-.dinn-felt::-webkit-scrollbar-track  { background: transparent; }
-.dinn-felt::-webkit-scrollbar-thumb  { background: rgba(201, 168, 76, 0.3); border-radius: 3px; }
+/* ─── Misc ────────────────────────────────────────────────────────────────�
