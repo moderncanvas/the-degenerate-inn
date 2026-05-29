@@ -84,42 +84,36 @@ Hooks.once("ready", () => {
 
 // ─── UI Injection ─────────────────────────────────────────────────────────────
 
-// Add a "The Degenerate Inn" button to the Cards sidebar header
-Hooks.on("renderCardsDirectory", (app, html) => {
-  // In v13, html is typically an HTMLElement
-  const el = html instanceof HTMLElement ? html : html[0];
+function _injectDinnButton(html) {
+  // Resolve the DOM element whether Foundry passes an HTMLElement (v13) or jQuery (v12)
+  const el = html instanceof HTMLElement ? html : (html[0] ?? null);
   if (!el) return;
 
   // Don't add twice
   if (el.querySelector(".dinn-open-btn")) return;
 
   const btn = document.createElement("button");
-  btn.className   = "dinn-open-btn";
-  btn.type        = "button";
-  btn.title       = "Open The Degenerate Inn";
-  btn.innerHTML   = `<i class="fas fa-diamond"></i> The Degenerate Inn`;
+  btn.className     = "dinn-open-btn";
+  btn.type          = "button";
+  btn.title         = "Open The Degenerate Inn";
+  btn.innerHTML     = `<i class="fas fa-diamond"></i> The Degenerate Inn`;
   btn.style.cssText = "width:100%;margin-top:4px;";
   btn.addEventListener("click", () => new LobbyApp().render(true));
 
+  // Try every selector variant across v12 / v13 HTML structures
   const footer = el.querySelector(".directory-footer") ?? el.querySelector("footer");
-  const header = el.querySelector(".directory-header");
+  const header = el.querySelector(".directory-header") ?? el.querySelector("header");
 
-  if (footer) footer.after(btn);
-  else if (header) header.after(btn);
-  else el.appendChild(btn);
-});
+  if (footer)       footer.before(btn);
+  else if (header)  header.after(btn);
+  else              el.appendChild(btn);
+}
 
-// Also inject into the scene controls toolbar (always visible)
-Hooks.on("getSceneControlButtons", (controls) => {
-  // Add to the token control group so it's always available
-  const tokenGroup = controls.find(c => c.name === "token");
-  if (tokenGroup) {
-    tokenGroup.tools.push({
-      name:    "degenerate-inn",
-      title:   "The Degenerate Inn",
-      icon:    "fas fa-diamond",
-      button:  true,
-      onClick: () => new LobbyApp().render(true),
-    });
-  }
-});
+// v12 hook name
+Hooks.on("renderCardsDirectory", (app, html) => _injectDinnButton(html));
+// v13 hook name (ApplicationV2 directories drop the plural)
+Hooks.on("renderCardDirectory",  (app, html) => _injectDinnButton(html));
+
+// Fallback: re-inject whenever the sidebar tab changes to "cards"
+Hooks.on("changeSidebarTab", (tab) => {
+  if (tab?.tabName !== "cards" && tab?.id !== 
