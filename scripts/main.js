@@ -80,13 +80,25 @@ Hooks.once("ready", () => {
   });
 
   console.log("The Degenerate Inn | Ready. Cards are on the table.");
+
+  // Inject the sidebar button on load, then again after a short delay
+  // in case the Cards sidebar renders after the ready hook fires
+  _injectDinnButton();
+  setTimeout(_injectDinnButton, 1000);
+  setTimeout(_injectDinnButton, 3000);
 });
 
 // ─── UI Injection ─────────────────────────────────────────────────────────────
 
-function _injectDinnButton(html) {
-  // Resolve the DOM element whether Foundry passes an HTMLElement (v13) or jQuery (v12)
-  const el = html instanceof HTMLElement ? html : (html[0] ?? null);
+function _injectDinnButton() {
+  // Try ui.cards first (works in v12 + v13), fall back to direct DOM query
+  let el = null;
+  if (ui.cards) {
+    el = ui.cards.element instanceof HTMLElement
+      ? ui.cards.element
+      : (ui.cards.element?.[0] ?? null);
+  }
+  if (!el) el = document.querySelector("#cards");
   if (!el) return;
 
   // Don't add twice
@@ -100,20 +112,12 @@ function _injectDinnButton(html) {
   btn.style.cssText = "width:100%;margin-top:4px;";
   btn.addEventListener("click", () => new LobbyApp().render(true));
 
-  // Try every selector variant across v12 / v13 HTML structures
+  // Try every known selector across v12 / v13 sidebar HTML structures
   const footer = el.querySelector(".directory-footer") ?? el.querySelector("footer");
   const header = el.querySelector(".directory-header") ?? el.querySelector("header");
 
-  if (footer)       footer.before(btn);
-  else if (header)  header.after(btn);
-  else              el.appendChild(btn);
-}
+  if (footer)      footer.before(btn);
+  else if (header) header.after(btn);
+  else             el.appendChild(btn);
 
-// v12 hook name
-Hooks.on("renderCardsDirectory", (app, html) => _injectDinnButton(html));
-// v13 hook name (ApplicationV2 directories drop the plural)
-Hooks.on("renderCardDirectory",  (app, html) => _injectDinnButton(html));
-
-// Fallback: re-inject whenever the sidebar tab changes to "cards"
-Hooks.on("changeSidebarTab", (tab) => {
-  if (tab?.tabName !== "cards" && tab?.id !== 
+  console.log("The Deg
