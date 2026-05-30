@@ -128,10 +128,20 @@ export class TableRegistry {
   static async _getOrCreateRegistry() {
     let journal = game.journal.getName(REGISTRY_JOURNAL_NAME);
     if (!journal) {
+      // Only GM can create it — players just return null and getAll() returns []
+      if (!game.user.isGM) return null;
       journal = await JournalEntry.create({
-        name: REGISTRY_JOURNAL_NAME,
-        ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE },
+        name:      REGISTRY_JOURNAL_NAME,
+        ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER },
       });
+    } else if (game.user.isGM) {
+      // Upgrade ownership if it was created as NONE (old versions)
+      const defOwn = journal.ownership?.default ?? -1;
+      if (defOwn < CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
+        await journal.update({
+          ownership: { ...journal.ownership, default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER }
+        });
+      }
     }
     return journal;
   }
@@ -139,6 +149,7 @@ export class TableRegistry {
   /** Return all active table summaries. */
   static async getAll() {
     const reg = await this._getOrCreateRegistry();
+    if (!reg) return [];
     return reg.getFlag(MODULE_ID, TABLES_FLAG) ?? [];
   }
 
@@ -152,17 +163,4 @@ export class TableRegistry {
 
   /** Remove a table from the registry. */
   static async unregister(tableId) {
-    const reg  = await this._getOrCreateRegistry();
-    const list = (reg.getFlag(MODULE_ID, TABLES_FLAG) ?? []).filter(t => t.tableId !== tableId);
-    await reg.setFlag(MODULE_ID, TABLES_FLAG, list);
-  }
-
-  /** Update the player count shown in the lobby. */
-  static async updatePlayerCount(tableId, count) {
-    const reg  = await this._getOrCreateRegistry();
-    const list = (reg.getFlag(MODULE_ID, TABLES_FLAG) ?? []).map(t =>
-      t.tableId === tableId ? { ...t, players: count } : t
-    );
-    await reg.setFlag(MODULE_ID, TABLES_FLAG, list);
-  }
-}
+    const reg  = await this._getO
