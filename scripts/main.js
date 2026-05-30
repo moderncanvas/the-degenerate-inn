@@ -65,7 +65,7 @@ Hooks.once("ready", () => {
   // Expose the module API globally
   game.degenerateInn = {
     socket:    new SocketHandler(),
-    openLobby: () => new LobbyApp().render(true),
+    openLobby: () => new LobbyApp().render({ force: true }),
   };
 
   // Register chat message listener for broadcast chat
@@ -73,7 +73,7 @@ Hooks.once("ready", () => {
     // Non-GM clients just see the message (GM already created it locally)
     if (!game.user.isGM) {
       await ChatMessage.create({
-        content: `<div class="degenerate-inn-chat"><i class="fas fa-diamond"></i> ${content}</div>`,
+        content: `<div class="degenerate-inn-chat"><i class="fas fa-gem"></i> ${content}</div>`,
         speaker: { alias: "The Degenerate Inn" },
       });
     }
@@ -81,25 +81,48 @@ Hooks.once("ready", () => {
 
   console.log("The Degenerate Inn | Ready. Cards are on the table.");
 
-  // Floating button on document.body — immune to Foundry re-renders.
-  // Positioned in the lower-left canvas area, clear of sidebar and hotbar.
+  // Visual confirmation that the module loaded (shows briefly in the UI)
+  ui.notifications?.info("🎰 The Degenerate Inn is open for business.");
+
+  // ── Inject UI entry points ──────────────────────────────────────────────────
+  // Strategy 1: Floating button on document.body (always visible, CSS-immune)
   _injectFloatingButton();
 
-  // Button in the chat panel — always visible since chat is the default tab.
+  // Strategy 2: Button inside the chat panel (always rendered, default tab)
   _injectChatButton();
   setTimeout(_injectChatButton, 500);
 
-  // Bonus: try sidebar injection too.
-  _injectDinnButton();
-  setTimeout(_injectDinnButton, 1000);
-  setTimeout(_injectDinnButton, 3000);
+  // Strategy 3: Create/update a Macro so there's always a reliable launcher
+  if (game.user.isGM) _ensureLaunchMacro();
 });
+
+// ─── Scene Control Button (v13) ───────────────────────────────────────────────
+// In Foundry v13, getSceneControlButtons passes a Record<string, SceneControl>
+// (an object keyed by control name), NOT an array.
+// Tools are added as properties on controls.tokens.tools, using onChange (not onClick).
+Hooks.on("getSceneControlButtons", (controls) => {
+  if (!controls?.tokens?.tools) return;
+  controls.tokens.tools.degenerateInn = {
+    name:    "degenerateInn",
+    title:   "The Degenerate Inn",
+    icon:    "fa-solid fa-gem",
+    order:   Object.keys(controls.tokens.tools).length,
+    button:  true,
+    visible: true,
+    onChange: () => game.degenerateInn?.openLobby(),
+  };
+});
+
+// Re-inject chat button when the chat panel re-renders
+Hooks.on("renderChatLog",       () => _injectChatButton());
+Hooks.on("renderChatDirectory", () => _injectChatButton());
+Hooks.on("changeSidebarTab",    () => _injectChatButton());
 
 // ─── UI Injection ─────────────────────────────────────────────────────────────
 
 /**
  * Inject a floating launch button directly onto document.body.
- * Positioned in the lower-left canvas area, well clear of sidebar and hotbar.
+ * Uses inline styles so it works even if the CSS file fails to load.
  * Fixed-position, always visible, completely immune to Foundry re-renders.
  */
 function _injectFloatingButton() {
@@ -109,40 +132,6 @@ function _injectFloatingButton() {
   btn.className = "dinn-launch-fab";
   btn.type      = "button";
   btn.title     = "The Degenerate Inn";
-  btn.innerHTML = `<i class="fas fa-gem"></i> Degenerate Inn`;
-  btn.addEventListener("click", () => new LobbyApp().render(true));
+  btn.innerHTML = `<i class="fa-solid fa-gem"></i> Degenerate Inn`;
 
-  document.body.appendChild(btn);
-  console.log("The Degenerate Inn | Floating button injected.");
-}
-
-/**
- * Inject a button at the top of the chat panel — the default active tab.
- * Chat is always visible when Foundry loads, so this covers the common case.
- */
-function _injectChatButton() {
-  const chatPanel = document.querySelector("#chat") ?? document.querySelector("section[id='chat']");
-  if (!chatPanel) return;
-  if (chatPanel.querySelector(".dinn-chat-btn")) return;
-
-  const btn = document.createElement("button");
-  btn.className = "dinn-chat-btn";
-  btn.type      = "button";
-  btn.innerHTML = `<i class="fas fa-gem"></i> Open The Degenerate Inn`;
-  btn.addEventListener("click", () => new LobbyApp().render(true));
-
-  // Put it right at the top of the chat panel, before anything else
-  chatPanel.prepend(btn);
-  console.log("The Degenerate Inn | Chat panel button injected.");
-}
-
-/** Inject a button inside the Cards sidebar panel content area (bonus attempt). */
-function _injectDinnButton() {
-  // Locate the Cards panel element across v12/v13 structures
-  let el = null;
-  if (ui.cards) {
-    el = ui.cards.element instanceof HTMLElement
-      ? ui.cards.element
-      : (ui.cards.element?.[0] ?? null);
-  }
-  if (!el
+  // Inline styles as a hard f
