@@ -1,19 +1,9 @@
 /**
  * TableApp.js — The main game window.
  *
- * This is what every player sees when they're seated at a table.
- * It shows the felt, cards, chips, and action buttons.
- *
- * Architecture:
- * - State is fetched from the JournalEntry flags on every render
- * - Foundry's `updateJournalEntry` hook triggers re-renders automatically
- * - Player actions → socket → GM processes → JournalEntry update → re-render
- *
  * NOTE: The class is defined inside Hooks.once("init") so that
- * foundry.applications.api.ApplicationV2 is guaranteed to exist when the
- * class body evaluates the `extends` clause. Accessing foundry.applications.api
- * at module scope (before init) causes a silent crash in Foundry v13 because
- * ApplicationV2 is not yet registered at module-load time.
+ * foundry.applications.api.ApplicationV2 is guaranteed to exist.
+ * Accessing it at module scope causes a silent crash in Foundry v13.
  */
 
 import { MODULE_ID, GameState, TableRegistry, GAME_PHASE, PLAYER_STATUS, POKER_STREET } from "../GameState.js";
@@ -24,13 +14,13 @@ import { BlackjackGame } from "../games/BlackjackGame.js";
 import { PokerGame } from "../games/PokerGame.js";
 import { SOCKET_EVENTS, PLAYER_ACTIONS } from "../SocketHandler.js";
 
-// Populated inside Hooks.once("init") — live ES module binding, safe to import.
 export let TableApp = null;
 
 Hooks.once("init", () => {
   const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
   TableApp = class TableApp extends HandlebarsApplicationMixin(ApplicationV2) {
+
     constructor(tableId, journalId, gameType, options = {}) {
       super(options);
       this._tableId   = tableId;
@@ -38,7 +28,7 @@ Hooks.once("init", () => {
       this._gameType  = gameType;
       this._gameState = new GameState(journalId);
       this._hookId    = null;
-      this._stagedBet = 0;  // Accumulated via chip clicks — client-side only, resets on placement
+      this._stagedBet = 0;
     }
 
     static DEFAULT_OPTIONS = {
@@ -55,78 +45,57 @@ Hooks.once("init", () => {
         ],
       },
       actions: {
-        addChip:           TableApp._onAddChip,
-        clearBet:          TableApp._onClearBet,
-        sitDown:           TableApp._onSitDown,
-        leaveTable:        TableApp._onLeaveTable,
-        placeBet:          TableApp._onPlaceBet,
-        deal:              TableApp._onDeal,
-        hit:               TableApp._onHit,
-        stand:             TableApp._onStand,
-        double:            TableApp._onDouble,
-        fold:              TableApp._onFold,
-        check:             TableApp._onCheck,
-        call:              TableApp._onCall,
-        raise:             TableApp._onRaise,
-        dealFlop:          TableApp._onDealFlop,
-        dealTurn:          TableApp._onDealTurn,
-        dealRiver:         TableApp._onDealRiver,
-        showdown:          TableApp._onShowdown,
-        runDealer:         TableApp._onRunDealer,
-        newHand:           TableApp._onNewHand,
-        distributeChips:   TableApp._onDistributeChips,
+        addChip:         TableApp._onAddChip,
+        clearBet:        TableApp._onClearBet,
+        sitDown:         TableApp._onSitDown,
+        leaveTable:      TableApp._onLeaveTable,
+        placeBet:        TableApp._onPlaceBet,
+        deal:            TableApp._onDeal,
+        hit:             TableApp._onHit,
+        stand:           TableApp._onStand,
+        double:          TableApp._onDouble,
+        fold:            TableApp._onFold,
+        check:           TableApp._onCheck,
+        call:            TableApp._onCall,
+        raise:           TableApp._onRaise,
+        dealFlop:        TableApp._onDealFlop,
+        dealTurn:        TableApp._onDealTurn,
+        dealRiver:       TableApp._onDealRiver,
+        showdown:        TableApp._onShowdown,
+        runDealer:       TableApp._onRunDealer,
+        newHand:         TableApp._onNewHand,
+        distributeChips: TableApp._onDistributeChips,
       },
     };
 
     static PARTS = {
-      table: {
-        template: `modules/${MODULE_ID}/templates/table.hbs`,
-      },
+      table: { template: `modules/${MODULE_ID}/templates/table.hbs` },
     };
 
-    /** Static factory: creates the underlying journal, game state, and opens the app. */
+    // ─── Static Factories ──────────────────────────────────────────────────────
+
     static async createAndOpen({ gameType, ante = 5 }) {
-      if (!game.user.isGM) {
-        ui.notifications.warn("Only the GM can create a table.");
-        return;
-      }
-
+      if (!game.user.isGM) { ui.notifications.warn("Only the GM can create a table."); return; }
       const tableId = foundry.utils.randomID(8);
-
-      // Create a hidden journal to hold state
       const journal = await JournalEntry.create({
         name:      `[DI] Table — ${tableId}`,
         ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE },
       });
-
-      // Create the deck
       const deck          = await DeckManager.createDeck(tableId);
       const dealerHand    = await DeckManager.createDealerHand(tableId);
       const communityPile = gameType === "poker" ? await DeckManager.createCommunityPile(tableId) : null;
-
-      // Build initial state
-      const state = GameState.buildInitial({
-        tableId, journalId: journal.id, gameType, creatorId: game.user.id,
-      });
-      state.deckId           = deck.id;
-      state.dealer.handId    = dealerHand.id;
-      state.communityPileId  = communityPile?.id ?? null;
-      state.gameData.ante    = ante;
-
-      const gs = new GameState(journal.id);
-      await gs.set(state);
-
-      // Register in the lobby
+      const state = GameState.buildInitial({ tableId, journalId: journal.id, gameType, creatorId: game.user.id });
+      state.deckId          = deck.id;
+      state.dealer.handId   = dealerHand.id;
+      state.communityPileId = communityPile?.id ?? null;
+      state.gameData.ante   = ante;
+      await new GameState(journal.id).set(state);
       await TableRegistry.register(tableId, journal.id, gameType, game.user.name);
-
-      // Open the app
       const app = new TableApp(tableId, journal.id, gameType);
       await app.render({ force: true });
-
       return app;
     }
 
-    /** Open an existing table by ID (for players joining). */
     static async openForTable(tableId, journalId, gameType) {
       const app = new TableApp(tableId, journalId, gameType);
       await app.render({ force: true });
@@ -137,37 +106,13 @@ Hooks.once("init", () => {
 
     async _onFirstRender(context, options) {
       await super._onFirstRender?.(context, options);
-      this._registerHooks();
-      this._registerSocketHandlers();
-    }
-
-    _onClose(options) {
-      this._unregisterHooks();
-      return super._onClose?.(options);
-    }
-
-    _registerHooks() {
-      // Re-render whenever the game state journal changes
       this._hookId = Hooks.on("updateJournalEntry", (doc, change) => {
         if (doc.id !== this._journalId) return;
         if (!foundry.utils.hasProperty(change, `flags.${MODULE_ID}`)) return;
         this.render();
       });
-    }
-
-    _unregisterHooks() {
-      if (this._hookId !== null) {
-        Hooks.off("updateJournalEntry", this._hookId);
-        this._hookId = null;
-      }
-    }
-
-    _registerSocketHandlers() {
       const socket = game.degenerateInn?.socket;
-      if (!socket) return;
-
-      // Players send actions → GM processes them
-      if (game.user.isGM) {
+      if (socket && game.user.isGM) {
         socket.on(SOCKET_EVENTS.REQUEST_JOIN,      (p) => this._gmHandleJoin(p));
         socket.on(SOCKET_EVENTS.REQUEST_LEAVE,     (p) => this._gmHandleLeave(p));
         socket.on(SOCKET_EVENTS.REQUEST_PLACE_BET, (p) => this._gmHandlePlaceBet(p));
@@ -175,34 +120,30 @@ Hooks.once("init", () => {
       }
     }
 
-    // ─── Context Preparation ───────────────────────────────────────────────────
+    _onClose(options) {
+      if (this._hookId !== null) { Hooks.off("updateJournalEntry", this._hookId); this._hookId = null; }
+      return super._onClose?.(options);
+    }
+
+    // ─── Context ───────────────────────────────────────────────────────────────
 
     async _prepareContext(options) {
       const state = await this._gameState.get();
-      if (!state || !state.tableId) {
-        return { empty: true };
-      }
+      if (!state || !state.tableId) return { empty: true };
 
       const myUserId = game.userId;
       const isGM     = game.user.isGM;
-
-      // Determine which player seat belongs to the current user
       const myPlayer = state.players.find(p => p.userId === myUserId);
       const myIndex  = myPlayer ? state.players.indexOf(myPlayer) : -1;
       const isSeated = myIndex >= 0;
       const isMyTurn = isSeated && state.currentPlayerIndex === myIndex;
 
-      // Build player display data with proper card visibility
       const players = state.players.map((p, idx) => {
         const canSeeCards = isGM || p.userId === myUserId;
         const displayCards = (p.displayCards ?? []).map(card => {
-          if (!canSeeCards && !card.faceDown) {
-            // Hide other players' cards
-            return { ...card, faceDown: true, imgSrc: DeckManager.cardBackImg() };
-          }
+          if (!canSeeCards && !card.faceDown) return { ...card, faceDown: true, imgSrc: DeckManager.cardBackImg() };
           return card;
         });
-
         return {
           ...p,
           displayCards,
@@ -212,71 +153,48 @@ Hooks.once("init", () => {
         };
       });
 
-      // Empty seat slots (up to 4)
-      const seats       = [];
+      const seats = [];
       const occupiedIdx = new Set(state.players.map(p => p.seatIndex));
-      for (let i = 0; i < 4; i++) {
-        seats.push({ index: i, occupied: occupiedIdx.has(i) });
-      }
+      for (let i = 0; i < 4; i++) seats.push({ index: i, occupied: occupiedIdx.has(i) });
 
-      // Dealer cards — hide face-down ones from players
       const dealerCards = (state.dealer?.displayCards ?? []).map(card => {
-        if (!isGM && card.faceDown) {
-          return { ...card, imgSrc: DeckManager.cardBackImg() };
-        }
+        if (!isGM && card.faceDown) return { ...card, imgSrc: DeckManager.cardBackImg() };
         return card;
       });
 
-      // Build action bar context
-      const actions = this._buildActions(state, myPlayer, isGM, isMyTurn);
+      const actions  = this._buildActions(state, myPlayer, isGM, isMyTurn);
+      const canCall  = myPlayer && state.gameType === "poker" ? PokerGame.callAmount(state, myUserId) : 0;
+      const minRaise = myPlayer && state.gameType === "poker" ? PokerGame.minRaise(state, myUserId) : 0;
+      const canCheck = myPlayer && state.gameType === "poker" ? PokerGame.canCheck(state, myUserId) : false;
 
-      // Poker-specific
-      const canCall   = myPlayer && state.gameType === "poker" ? PokerGame.callAmount(state, myUserId) : 0;
-      const minRaise  = myPlayer && state.gameType === "poker" ? PokerGame.minRaise(state, myUserId) : 0;
-      const canCheck  = myPlayer && state.gameType === "poker" ? PokerGame.canCheck(state, myUserId) : false;
-
-      // ── Chip rack for betting ────────────────────────────────────────────────
-      const CHIP_DENOMS = [1, 5, 25, 100, 500];
-      const chipDenominations = CHIP_DENOMS.map(v => ({
-        value:    v,
-        // Disable the chip if adding it would exceed the player's remaining chips
+      // Chip rack
+      const chipDenominations = [1, 5, 25, 100, 500].map(v => ({
+        value:     v,
         canAfford: !myPlayer || (this._stagedBet + v) <= myPlayer.chips,
       }));
 
-      // ── Dealer hand value for Blackjack ─────────────────────────────────────
+      // Dealer value for blackjack
       let dealerValueDisplay = null;
       if (state.gameType === "blackjack") {
-        const allDealerCards  = state.dealer?.displayCards ?? [];
-        const faceUpCards     = allDealerCards.filter(c => !c.faceDown);
-        if (faceUpCards.length > 0) {
-          const visibleValue = DeckManager.blackjackHandValue(faceUpCards);
-          const hasHidden    = allDealerCards.some(c => c.faceDown);
+        const allCards  = state.dealer?.displayCards ?? [];
+        const faceUp    = allCards.filter(c => !c.faceDown);
+        if (faceUp.length > 0) {
+          const visible   = DeckManager.blackjackHandValue(faceUp);
+          const hasHidden = allCards.some(c => c.faceDown);
           if (isGM) {
-            const totalValue = DeckManager.blackjackHandValue(allDealerCards);
-            dealerValueDisplay = hasHidden
-              ? `${totalValue} (${visibleValue} showing)`
-              : String(totalValue);
+            const total = DeckManager.blackjackHandValue(allCards);
+            dealerValueDisplay = hasHidden ? `${total} (${visible} showing)` : String(total);
           } else {
-            // Players see face-up value with a "?" for the hole card
-            dealerValueDisplay = hasHidden ? `${visibleValue} + ?` : String(visibleValue);
+            dealerValueDisplay = hasHidden ? `${visible} + ?` : String(visible);
           }
         }
       }
 
       return {
-        state,
-        players,
-        seats,
-        dealerCards,
+        state, players, seats, dealerCards,
         communityCards: state.communityCards ?? [],
-        myPlayer,
-        isGM,
-        isSeated,
-        isMyTurn,
-        actions,
-        canCall,
-        minRaise,
-        canCheck,
+        myPlayer, isGM, isSeated, isMyTurn, actions,
+        canCall, minRaise, canCheck,
         gameType:    state.gameType,
         phase:       state.phase,
         pot:         state.pot,
@@ -285,19 +203,15 @@ Hooks.once("init", () => {
         street:      state.gameData?.street,
         cardBackImg: DeckManager.cardBackImg(),
         blankImg:    DeckManager.cardBlankImg(),
-        PHASE:       GAME_PHASE,
-        STREET:      POKER_STREET,
-        STATUS:      PLAYER_STATUS,
-        // Betting UI
+        PHASE: GAME_PHASE, STREET: POKER_STREET, STATUS: PLAYER_STATUS,
         chipDenominations,
-        stagedBet:   this._stagedBet,
-        // Blackjack dealer value
+        stagedBet: this._stagedBet,
         dealerValueDisplay,
       };
     }
 
     _handValueLabel(cards, gameType) {
-      if (!cards || cards.length === 0) return "";
+      if (!cards?.length) return "";
       if (gameType === "blackjack") {
         const val = DeckManager.blackjackHandValue(cards.filter(c => !c.faceDown));
         return val > 0 ? String(val) : "";
@@ -315,8 +229,7 @@ Hooks.once("init", () => {
         [GAME_PHASE.RESULTS]:  "Round Over",
       };
       if (state.phase === GAME_PHASE.PLAYING && state.gameType === "poker" && state.gameData?.street) {
-        const streetNames = { preflop: "Pre-Flop", flop: "Flop", turn: "Turn", river: "River" };
-        return streetNames[state.gameData.street] ?? "In Play";
+        return { preflop: "Pre-Flop", flop: "Flop", turn: "Turn", river: "River" }[state.gameData.street] ?? "In Play";
       }
       return labels[state.phase] ?? state.phase;
     }
@@ -324,9 +237,7 @@ Hooks.once("init", () => {
     _buildActions(state, myPlayer, isGM, isMyTurn) {
       const phase = state.phase;
       const type  = state.gameType;
-
       return {
-        // GM controls
         showDeal: isGM && (
           (phase === GAME_PHASE.LOBBY   && state.players.length > 0) ||
           (phase === GAME_PHASE.BETTING && state.players.length > 0 && state.players.every(p => p.currentBet > 0))
@@ -338,51 +249,36 @@ Hooks.once("init", () => {
         showDealRiver:  isGM && type === "poker" && phase === GAME_PHASE.SHOWDOWN && state.gameData?.street === POKER_STREET.TURN,
         showShowdown:   isGM && type === "poker" && phase === GAME_PHASE.SHOWDOWN && state.gameData?.street === POKER_STREET.RIVER,
         showDistribute: isGM,
-
-        // Player controls (only shown when it's their turn)
-        showHit:   isMyTurn && type === "blackjack" && phase === GAME_PHASE.PLAYING,
-        showStand: isMyTurn && type === "blackjack" && phase === GAME_PHASE.PLAYING,
+        showHit:    isMyTurn && type === "blackjack" && phase === GAME_PHASE.PLAYING,
+        showStand:  isMyTurn && type === "blackjack" && phase === GAME_PHASE.PLAYING,
         showDouble: isMyTurn && type === "blackjack" && phase === GAME_PHASE.PLAYING && myPlayer?.displayCards?.length === 2,
-        showFold:  isMyTurn && type === "poker" && phase === GAME_PHASE.PLAYING,
-        showCheck: isMyTurn && type === "poker" && phase === GAME_PHASE.PLAYING && PokerGame.canCheck(state, game.userId),
-        showCall:  isMyTurn && type === "poker" && phase === GAME_PHASE.PLAYING && !PokerGame.canCheck(state, game.userId),
-        showRaise: isMyTurn && type === "poker" && phase === GAME_PHASE.PLAYING,
-
-        // Bet control (shown during betting phase for all unseated + seated players)
-        showBet:   myPlayer && phase === GAME_PHASE.BETTING && (myPlayer.currentBet === 0),
-
-        // Sit down button
-        showSit:   !myPlayer && phase !== GAME_PHASE.RESULTS && state.players.length < 4,
+        showFold:   isMyTurn && type === "poker" && phase === GAME_PHASE.PLAYING,
+        showCheck:  isMyTurn && type === "poker" && phase === GAME_PHASE.PLAYING && PokerGame.canCheck(state, game.userId),
+        showCall:   isMyTurn && type === "poker" && phase === GAME_PHASE.PLAYING && !PokerGame.canCheck(state, game.userId),
+        showRaise:  isMyTurn && type === "poker" && phase === GAME_PHASE.PLAYING,
+        showBet:    myPlayer && phase === GAME_PHASE.BETTING && myPlayer.currentBet === 0,
+        showSit:    !myPlayer && phase !== GAME_PHASE.RESULTS && state.players.length < 4,
       };
     }
 
-    // ─── GM Action Handlers ────────────────────────────────────────────────────
+    // ─── GM Handlers ───────────────────────────────────────────────────────────
 
     async _gmHandleJoin({ tableId, userId, actorId }) {
       if (tableId !== this._tableId) return;
       const state = await this._gameState.get();
-
-      // Already seated?
       if (state.players.some(p => p.userId === userId)) return;
       if (state.players.length >= 4) {
         ui.notifications.warn(`${game.users.get(userId)?.name} tried to join but the table is full.`);
         return;
       }
-
-      const user      = game.users.get(userId);
-      const seatIndex = state.players.length;
-      const hand      = await DeckManager.createHand(tableId, userId, user?.name ?? userId);
-
-      const player = GameState.buildPlayer({
-        userId,
-        userName:      user?.name ?? userId,
-        actorId,
-        seatIndex,
+      const user  = game.users.get(userId);
+      const hand  = await DeckManager.createHand(tableId, userId, user?.name ?? userId);
+      state.players.push(GameState.buildPlayer({
+        userId, userName: user?.name ?? userId, actorId,
+        seatIndex:     state.players.length,
         startingChips: ChipManager.startingChipCount(actorId),
         handId:        hand.id,
-      });
-
-      state.players.push(player);
+      }));
       await this._gameState.set(state);
       await TableRegistry.updatePlayerCount(tableId, state.players.length);
     }
@@ -400,64 +296,39 @@ Hooks.once("init", () => {
       const state  = await this._gameState.get();
       const player = state.players.find(p => p.userId === userId);
       if (!player) return;
-
       const bet = Math.min(amount, player.chips);
-      player.chips     -= bet;
-      player.currentBet = bet;
-      state.pot        += bet;
-
-      // Check if all players have bet → ready to deal
-      const allBet = state.players.every(p => p.currentBet > 0);
-      if (allBet) state.phase = GAME_PHASE.BETTING; // stays betting; GM manually deals
-
+      player.chips      -= bet;
+      player.currentBet  = bet;
+      state.pot         += bet;
+      if (state.players.every(p => p.currentBet > 0)) state.phase = GAME_PHASE.BETTING;
       await this._gameState.set(state);
     }
 
     async _gmHandleAction({ tableId, userId, action, amount }) {
-      if (tableId !== this._tableId) return;
-      if (!game.user.isGM) return;
-
+      if (tableId !== this._tableId || !game.user.isGM) return;
       let state = await this._gameState.get();
-
-      // Validate it's actually this player's turn
       const playerIdx = state.players.findIndex(p => p.userId === userId);
       if (playerIdx !== state.currentPlayerIndex) return;
 
       switch (action) {
         case PLAYER_ACTIONS.HIT:
           state = await BlackjackGame.hit(state, userId);
-          if (BlackjackGame.allPlayersDone(state)) {
-            state = await this._runDealerPhase(state);
-          }
+          if (BlackjackGame.allPlayersDone(state)) state = await this._runDealerPhase(state);
           break;
         case PLAYER_ACTIONS.STAND:
           state = BlackjackGame.stand(state, userId);
-          if (BlackjackGame.allPlayersDone(state)) {
-            state = await this._runDealerPhase(state);
-          }
+          if (BlackjackGame.allPlayersDone(state)) state = await this._runDealerPhase(state);
           break;
         case PLAYER_ACTIONS.DOUBLE:
           state = await BlackjackGame.double(state, userId);
-          if (BlackjackGame.allPlayersDone(state)) {
-            state = await this._runDealerPhase(state);
-          }
+          if (BlackjackGame.allPlayersDone(state)) state = await this._runDealerPhase(state);
           break;
-        case PLAYER_ACTIONS.FOLD:
-          state = PokerGame.fold(state, userId);
-          break;
-        case PLAYER_ACTIONS.CHECK:
-          state = PokerGame.check(state, userId);
-          break;
-        case PLAYER_ACTIONS.CALL:
-          state = PokerGame.call(state, userId);
-          break;
-        case PLAYER_ACTIONS.RAISE:
-          state = PokerGame.raise(state, userId, amount);
-          break;
+        case PLAYER_ACTIONS.FOLD:   state = PokerGame.fold(state, userId);         break;
+        case PLAYER_ACTIONS.CHECK:  state = PokerGame.check(state, userId);        break;
+        case PLAYER_ACTIONS.CALL:   state = PokerGame.call(state, userId);         break;
+        case PLAYER_ACTIONS.RAISE:  state = PokerGame.raise(state, userId, amount); break;
       }
-
       await this._gameState.set(state);
-      this._postChatUpdates(state);
     }
 
     async _runDealerPhase(state) {
@@ -466,29 +337,7 @@ Hooks.once("init", () => {
       return result.state;
     }
 
-    // ─── UI Action Handlers (static, bound to instance via `this`) ─────────────
-
-    static async _onSitDown(event, target) {
-      const userId  = game.userId;
-      const actorId = game.user.character?.id ?? null;
-
-      if (game.user.isGM) {
-        // GM joins locally (no socket needed)
-        await this._gmHandleJoin({ tableId: this._tableId, userId, actorId });
-      } else {
-        game.degenerateInn.socket.requestJoin({ tableId: this._tableId, userId, actorId });
-      }
-    }
-
-    static async _onLeaveTable(event, target) {
-      const userId = game.userId;
-      if (game.user.isGM) {
-        await this._gmHandleLeave({ tableId: this._tableId, userId });
-      } else {
-        game.degenerateInn.socket.requestLeave({ tableId: this._tableId, userId });
-      }
-      this.close();
-    }
+    // ─── Action Handlers ───────────────────────────────────────────────────────
 
     static _onAddChip(event, target) {
       const value = parseInt(target.dataset.value || 0);
@@ -504,47 +353,44 @@ Hooks.once("init", () => {
 
     static async _onPlaceBet(event, target) {
       const amount = this._stagedBet || 0;
-      if (amount <= 0) {
-        ui.notifications.warn("Click chips to build your bet first.");
-        return;
-      }
-
+      if (amount <= 0) { ui.notifications.warn("Click chips to build your bet first."); return; }
       if (game.user.isGM) {
         await this._gmHandlePlaceBet({ tableId: this._tableId, userId: game.userId, amount });
       } else {
         game.degenerateInn.socket.requestPlaceBet({ tableId: this._tableId, userId: game.userId, amount });
       }
+      this._stagedBet = 0;
+    }
 
-      this._stagedBet = 0; // Reset after placing
+    static async _onSitDown(event, target) {
+      const userId  = game.userId;
+      const actorId = game.user.character?.id ?? null;
+      if (game.user.isGM) await this._gmHandleJoin({ tableId: this._tableId, userId, actorId });
+      else game.degenerateInn.socket.requestJoin({ tableId: this._tableId, userId, actorId });
+    }
+
+    static async _onLeaveTable(event, target) {
+      const userId = game.userId;
+      if (game.user.isGM) await this._gmHandleLeave({ tableId: this._tableId, userId });
+      else game.degenerateInn.socket.requestLeave({ tableId: this._tableId, userId });
+      this.close();
     }
 
     static async _onDeal(event, target) {
       if (!game.user.isGM) return;
       let state = await this._gameState.get();
-
-      // LOBBY → BETTING: first Deal click opens the betting round so players can place bets
       if (state.phase === GAME_PHASE.LOBBY) {
         state.phase = GAME_PHASE.BETTING;
         await this._gameState.set(state);
         ui.notifications.info("Betting is open — players may now place their bets.");
         return;
       }
-
       if (state.phase !== GAME_PHASE.BETTING) return;
-
-      // Reset hands for a clean deal
       const handIds = state.players.map(p => p.handId).filter(Boolean);
       await DeckManager.fullReset(state.deckId, handIds, [state.communityPileId].filter(Boolean));
-
-      // Clear display cards
-      for (const player of state.players) {
-        player.displayCards = [];
-        player.status = PLAYER_STATUS.ACTIVE;
-      }
+      for (const player of state.players) { player.displayCards = []; player.status = PLAYER_STATUS.ACTIVE; }
       state.dealer.displayCards = [];
       state.communityCards = [];
-
-      // Delegate to the appropriate game
       if (state.gameType === "highcard") {
         state = await HighCardGame.deal(state);
         const { state: resolved, chatLines } = await HighCardGame.resolve(state);
@@ -555,47 +401,23 @@ Hooks.once("init", () => {
       } else if (state.gameType === "poker") {
         state = await PokerGame.deal(state);
       }
-
       await this._gameState.set(state);
     }
 
-    static _onHit(event, target) {
-      this._sendPlayerAction(PLAYER_ACTIONS.HIT);
-    }
-
-    static _onStand(event, target) {
-      this._sendPlayerAction(PLAYER_ACTIONS.STAND);
-    }
-
-    static _onDouble(event, target) {
-      this._sendPlayerAction(PLAYER_ACTIONS.DOUBLE);
-    }
-
-    static _onFold(event, target) {
-      this._sendPlayerAction(PLAYER_ACTIONS.FOLD);
-    }
-
-    static _onCheck(event, target) {
-      this._sendPlayerAction(PLAYER_ACTIONS.CHECK);
-    }
-
-    static _onCall(event, target) {
-      this._sendPlayerAction(PLAYER_ACTIONS.CALL);
-    }
+    static _onHit(event, target)    { this._sendPlayerAction(PLAYER_ACTIONS.HIT); }
+    static _onStand(event, target)  { this._sendPlayerAction(PLAYER_ACTIONS.STAND); }
+    static _onDouble(event, target) { this._sendPlayerAction(PLAYER_ACTIONS.DOUBLE); }
+    static _onFold(event, target)   { this._sendPlayerAction(PLAYER_ACTIONS.FOLD); }
+    static _onCheck(event, target)  { this._sendPlayerAction(PLAYER_ACTIONS.CHECK); }
+    static _onCall(event, target)   { this._sendPlayerAction(PLAYER_ACTIONS.CALL); }
 
     static async _onRaise(event, target) {
       const state    = await this._gameState.get();
       const minRaise = PokerGame.minRaise(state, game.userId);
-
       const amount = await new Promise(resolve => {
         new Dialog({
-          title:   "Raise",
-          content: `
-            <div style="padding:8px;">
-              <p>Raise to (total chips in this round):</p>
-              <input type="number" id="raise-amount" value="${minRaise}" min="${minRaise}">
-            </div>
-          `,
+          title: "Raise",
+          content: `<div style="padding:8px;"><p>Raise to (total chips in this round):</p><input type="number" id="raise-amount" value="${minRaise}" min="${minRaise}"></div>`,
           buttons: {
             raise:  { label: "Raise",  callback: html => resolve(parseInt(html.find("#raise-amount").val()) || minRaise) },
             cancel: { label: "Cancel", callback: () => resolve(null) },
@@ -603,7 +425,6 @@ Hooks.once("init", () => {
           default: "raise",
         }).render(true);
       });
-
       if (amount === null) return;
       this._sendPlayerAction(PLAYER_ACTIONS.RAISE, amount);
     }
@@ -642,10 +463,51 @@ Hooks.once("init", () => {
 
     static async _onRunDealer(event, target) {
       if (!game.user.isGM) return;
-      let state  = await this._gameState.get();
+      let state = await this._gameState.get();
       const { state: resolved, chatLines } = await BlackjackGame.runDealerAndResolve(state);
       for (const line of chatLines) this._sendChatMessage(line);
       await this._gameState.set(resolved);
     }
 
-    static async _onNewHa
+    static async _onNewHand(event, target) {
+      if (!game.user.isGM) return;
+      let state = await this._gameState.get();
+      const handIds = state.players.map(p => p.handId).filter(Boolean);
+      await DeckManager.fullReset(state.deckId, handIds, [state.communityPileId].filter(Boolean));
+      if (state.gameType === "highcard")  state = HighCardGame.prepareNewHand(state);
+      if (state.gameType === "blackjack") state = BlackjackGame.prepareNewHand(state);
+      if (state.gameType === "poker")     state = PokerGame.prepareNewHand(state);
+      await this._gameState.set(state);
+      this._sendChatMessage("🃏 A new hand has begun at The Degenerate Inn.");
+    }
+
+    static async _onDistributeChips(event, target) {
+      if (!game.user.isGM) return;
+      const state  = await this._gameState.get();
+      const amount = await ChipManager.showDistributeDialog(state);
+      if (!amount) return;
+      for (const player of state.players) player.chips = amount;
+      await this._gameState.set(state);
+      ui.notifications.info(`Distributed ${amount} chips to all players.`);
+    }
+
+    // ─── Helpers ───────────────────────────────────────────────────────────────
+
+    _sendPlayerAction(action, amount = 0) {
+      const payload = { tableId: this._tableId, userId: game.userId, action, amount };
+      if (game.user.isGM) this._gmHandleAction(payload);
+      else game.degenerateInn.socket.requestAction(payload);
+    }
+
+    _sendChatMessage(content) {
+      ChatMessage.create({
+        content: `<div class="degenerate-inn-chat"><i class="fas fa-gem"></i> ${content}</div>`,
+        speaker: { alias: "The Degenerate Inn" },
+      });
+    }
+
+    _postChatUpdates(state) {}
+  };
+
+  console.log("The Degenerate Inn | TableApp class registered.");
+});
