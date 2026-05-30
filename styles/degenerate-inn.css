@@ -577,4 +577,95 @@
 /* ─── Floating launch button (fixed to lower-left canvas, clear of all UI) ── */
 .dinn-launch-fab {
   position: fixed !important;
-  bottom: 140px !important;   /* well a
+  bottom: 140px !important;   /* well above the ~120px hotbar area */
+  left: 60px !important;      /* just right of the ~50px scene-controls strip */
+  z-index: 99999 !important;
+  background: var(--dinn-gold) !important;
+  color: #1a0a00 !important;
+  border: 2px solid #7a5c10 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  font-weight: bold !important;
+  font-family: "Palatino Linotype", Palatino, Georgia, serif !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8) !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.dinn-launch-fab:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.dinn-launch-fab:active {
+  transform: translateY(0);
+}
+
+/* ─── Chat panel launch button ───────────────────────────────────────────── */
+.dinn-chat-btn {
+  display: block !important;
+  width: calc(100% - 8px) !important;
+  margin: 4px 4px 6px !important;
+  padding: 7px 12px !important;
+  background: linear-gradient(135deg, #1a4731, #28724d) !important;
+  border: 1px solid var(--dinn-gold) !important;
+  border-radius: 4px !important;
+  color: var(--dinn-gold) !important;
+  font-family: "Palatino Linotype", Palatino, Georgia, serif !important;
+  font-size: 0.85em !important;
+  font-weight: bold !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4) !important;
+  transition: filter 0.15s;
+}
+
+.dinn-chat-btn:hover {
+  filter: brightness(1.2);
+}
+
+/* ─── Sidebar button ─────────────────────────────────────────────────────── */
+.dinn-open-btn {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 4px 8px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #1a4731, #28724d);
+  border: 1px solid var(--dinn-gold);
+  border-radius: 4px;
+  color: var(--dinn-gold);
+  font-family: inherit;
+  font-size: 0.85em;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.dinn-open-btn:hover {
+  background: linear-gradient(135deg, #28724d, #35986a);
+  box-shadow: 0 0 8px var(--dinn-active-glow);
+  color: var(--dinn-gold-light);
+}
+
+/* ─── Misc ───────────────────────────────────────────────────────────────── */
+.dinn-table-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--dinn-text-muted);
+  font-style: italic;
+  padding: 40px;
+  text-align: center;
+}
+
+/* Scrollbar inside felt */
+.dinn-felt::-webkit-scrollbar        { width: 6px; }
+.dinn-felt::-webkit-scrollbar-track  { background: transparent; }
+.dinn-felt::-webkit-scrollbar-thumb  { background: rgba(201, 168, 76, 0.3); border-radius: 3px; }
