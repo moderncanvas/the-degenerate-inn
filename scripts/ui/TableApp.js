@@ -621,4 +621,24 @@ export class TableApp extends HandlebarsApplicationMixin(ApplicationV2) {
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   /** Send a player action — to GM via socket if player, or handle locally if GM. */
-  _sen
+  _sendPlayerAction(action, amount = 0) {
+    const payload = { tableId: this._tableId, userId: game.userId, action, amount };
+    if (game.user.isGM) {
+      this._gmHandleAction(payload);
+    } else {
+      game.degenerateInn.socket.requestAction(payload);
+    }
+  }
+
+  _sendChatMessage(content) {
+    ChatMessage.create({
+      content: `<div class="degenerate-inn-chat"><i class="fas fa-diamond"></i> ${content}</div>`,
+      speaker: { alias: "The Degenerate Inn" },
+    });
+  }
+
+  _postChatUpdates(state) {
+    // Post any pending chat messages derived from state changes
+    // (called after action processing)
+  }
+}
