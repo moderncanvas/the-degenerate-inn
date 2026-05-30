@@ -433,15 +433,55 @@
 
 .dinn-seat-footer {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   font-size: 0.8em;
-  flex-wrap: wrap;
 }
 
 .dinn-chips {
   color: var(--dinn-gold);
   font-weight: bold;
+}
+
+/* Chip display — big and obvious so everyone knows the count */
+.dinn-chip-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  border-radius: 6px;
+  padding: 3px 8px;
+  width: 100%;
+}
+
+.dinn-chip-icon {
+  color: var(--dinn-gold);
+  font-size: 0.9em;
+}
+
+.dinn-chip-count {
+  color: var(--dinn-gold-light);
+  font-size: 1.15em;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.dinn-chip-label {
+  color: var(--dinn-text-muted);
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-left: 1px;
+}
+
+.dinn-bet-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ffb74d;
+  font-size: 0.8em;
+  padding: 1px 0;
 }
 
 .dinn-bet {
@@ -534,29 +574,4 @@
   margin-right: 4px;
 }
 
-/* ─── Sidebar button ─────────────────────────────────────────────────────── */
-.dinn-open-btn {
-  display: block;
-  width: calc(100% - 16px);
-  margin: 4px 8px;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #1a4731, #28724d);
-  border: 1px solid var(--dinn-gold);
-  border-radius: 4px;
-  color: var(--dinn-gold);
-  font-family: inherit;
-  font-size: 0.85em;
-  font-weight: bold;
-  letter-spacing: 1px;
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.15s;
-}
-
-.dinn-open-btn:hover {
-  background: linear-gradient(135deg, #28724d, #35986a);
-  box-shadow: 0 0 8px var(--dinn-active-glow);
-  color: var(--dinn-gold-light);
-}
-
-/* ─── Misc ──────────────────────────────────────────
+/* ─── Sidebar button ──────────────────────────────────────────────────�
