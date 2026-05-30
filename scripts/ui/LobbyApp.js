@@ -56,6 +56,25 @@ export class LobbyApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  // ─── Lifecycle ─────────────────────────────────────────────────────────────
+
+  async _onFirstRender(context, options) {
+    await super._onFirstRender?.(context, options);
+    // Watch for registry journal changes so the lobby auto-refreshes
+    // when a table is created, deleted, or its player count changes.
+    this._registryHookId = Hooks.on("updateJournalEntry", (doc) => {
+      if (doc.name === "Degenerate Inn — Registry") this.render();
+    });
+  }
+
+  _onClose(options) {
+    if (this._registryHookId != null) {
+      Hooks.off("updateJournalEntry", this._registryHookId);
+      this._registryHookId = null;
+    }
+    return super._onClose?.(options);
+  }
+
   // ─── Actions ───────────────────────────────────────────────────────────────
 
   static async _onCreateTable(event, target) {
@@ -127,30 +146,4 @@ export class LobbyApp extends HandlebarsApplicationMixin(ApplicationV2) {
         buttons: {
           highcard:  { label: "🃏 High Card",       callback: () => resolve("highcard") },
           blackjack: { label: "♠ Blackjack",        callback: () => resolve("blackjack") },
-          poker:     { label: "🂡 Texas Hold'em",   callback: () => resolve("poker") },
-          cancel:    { label: "Cancel",              callback: () => resolve(null) },
-        },
-        default: "blackjack",
-      }).render(true);
-    });
-  }
-
-  static _pickAnte() {
-    return new Promise(resolve => {
-      new Dialog({
-        title:   "Set Ante",
-        content: `
-          <div style="padding:8px;">
-            <p>Ante amount per hand:</p>
-            <input type="number" id="ante-amount" value="5" min="1" style="width:80px;">
-          </div>
-        `,
-        buttons: {
-          ok:     { label: "Set",    callback: html => resolve(parseInt(html.find("#ante-amount").val()) || 5) },
-          cancel: { label: "Cancel", callback: () => resolve(null) },
-        },
-        default: "ok",
-      }).render(true);
-    });
-  }
-}
+          poker:     { label: "🂡 Texas Hol
