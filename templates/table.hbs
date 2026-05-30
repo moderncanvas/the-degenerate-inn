@@ -5,20 +5,19 @@
 {{else}}
 <div class="dinn-table" data-game-type="{{gameType}}" data-phase="{{phase}}">
 
-  <!-- ─── Top Bar ──────────────────────────────────────────────────────── -->
+  <!-- Top Bar -->
   <div class="dinn-topbar">
     <span class="dinn-game-label">{{gameLabel}}</span>
     <span class="dinn-phase-label">{{phaseLabel}}</span>
     <span class="dinn-pot">Pot: <strong>{{pot}}</strong> chips</span>
   </div>
 
-  <!-- ─── Felt / Main Play Area ────────────────────────────────────────── -->
+  <!-- Felt / Main Play Area -->
   <div class="dinn-felt">
 
-    <!-- DEALER / COMMUNITY CARD ZONE -->
+    <!-- Dealer / Community Zone -->
     <div class="dinn-dealer-zone">
 
-      {{!-- Blackjack: show dealer hand --}}
       {{#if (eq gameType "blackjack")}}
       <div class="dinn-dealer-label">
         <i class="fas fa-user-tie"></i> Dealer
@@ -43,7 +42,6 @@
       </div>
       {{/if}}
 
-      {{!-- Poker: show community cards --}}
       {{#if (eq gameType "poker")}}
       <div class="dinn-community-label">
         <i class="fas fa-border-all"></i> Community Cards
@@ -53,23 +51,21 @@
         {{#each communityCards}}
         <img class="playing-card" src="{{imgSrc}}" alt="{{altText}}" draggable="false">
         {{/each}}
-        {{!-- Empty placeholder slots (5 total for poker) --}}
         {{#times (subtract 5 (length communityCards))}}
         <img class="playing-card card-placeholder" src="{{../cardBlankImg}}" alt="" draggable="false">
         {{/times}}
       </div>
       {{/if}}
 
-      {{!-- High Card: nothing in dealer zone --}}
       {{#if (eq gameType "highcard")}}
       <div class="dinn-highcard-label">
         <i class="fas fa-star"></i> High Card — Highest card wins the pot
       </div>
       {{/if}}
 
-    </div><!-- /.dinn-dealer-zone -->
+    </div>
 
-    <!-- ─── Player Seats ──────────────────────────────────────────────── -->
+    <!-- Player Seats -->
     <div class="dinn-player-seats" data-seat-count="{{players.length}}">
 
       {{#each players}}
@@ -86,7 +82,6 @@
           {{/if}}
         </div>
 
-        <!-- Player's cards -->
         <div class="dinn-card-row dinn-player-cards">
           {{#each displayCards}}
           <div class="dinn-card-slot">
@@ -99,7 +94,6 @@
           {{/if}}
         </div>
 
-        <!-- Chips + bet -->
         <div class="dinn-seat-footer">
           <div class="dinn-chip-display">
             <i class="fas fa-coins dinn-chip-icon"></i>
@@ -122,8 +116,6 @@
       </div>
       {{/each}}
 
-      {{!-- Empty / available seats --}}
-      {{#if (and (lt (length players) 4) (or (eq phase "lobby") (eq phase "betting")))}}
       {{#if actions.showSit}}
       <div class="dinn-player-seat empty-seat">
         <div class="dinn-empty-seat-inner">
@@ -132,16 +124,15 @@
         </div>
       </div>
       {{/if}}
-      {{/if}}
 
-    </div><!-- /.dinn-player-seats -->
+    </div>
 
-  </div><!-- /.dinn-felt -->
+  </div>
 
-  <!-- ─── Action Bar ─────────────────────────────────────────────────── -->
+  <!-- Action Bar -->
   <div class="dinn-action-bar">
 
-    <!-- ── Chip Rack Betting (shown during betting phase) ────────────── -->
+    <!-- Chip rack betting -->
     {{#if actions.showBet}}
     <div class="dinn-chip-betting">
       <div class="dinn-chip-rack">
@@ -178,7 +169,7 @@
     </div>
     {{/if}}
 
-    <!-- Blackjack Player Actions -->
+    <!-- Blackjack actions -->
     {{#if actions.showHit}}
     <button type="button" data-action="hit" class="dinn-btn-action">
       <i class="fas fa-plus"></i> Hit
@@ -195,7 +186,7 @@
     </button>
     {{/if}}
 
-    <!-- Poker Player Actions -->
+    <!-- Poker actions -->
     {{#if actions.showCheck}}
     <button type="button" data-action="check" class="dinn-btn-action">
       <i class="fas fa-check"></i> Check
@@ -217,7 +208,7 @@
     </button>
     {{/if}}
 
-    <!-- GM Controls -->
+    <!-- GM controls -->
     {{#if isGM}}
     <div class="dinn-gm-controls">
       {{#if actions.showDeal}}
@@ -238,4 +229,32 @@
       {{#if actions.showDealTurn}}
       <button type="button" data-action="dealTurn" class="dinn-btn-primary">
         <i class="fas fa-layer-group"></i> Deal Turn
-    
+      </button>
+      {{/if}}
+      {{#if actions.showDealRiver}}
+      <button type="button" data-action="dealRiver" class="dinn-btn-primary">
+        <i class="fas fa-layer-group"></i> Deal River
+      </button>
+      {{/if}}
+      {{#if actions.showShowdown}}
+      <button type="button" data-action="showdown" class="dinn-btn-warning">
+        <i class="fas fa-trophy"></i> Showdown
+      </button>
+      {{/if}}
+      {{#if actions.showNewHand}}
+      <button type="button" data-action="newHand" class="dinn-btn-primary">
+        <i class="fas fa-redo"></i> New Hand
+      </button>
+      {{/if}}
+      {{#if actions.showDistribute}}
+      <button type="button" data-action="distributeChips" class="dinn-btn-secondary">
+        <i class="fas fa-coins"></i> Chips
+      </button>
+      {{/if}}
+    </div>
+    {{/if}}
+
+  </div>
+
+</div>
+{{/if}}
