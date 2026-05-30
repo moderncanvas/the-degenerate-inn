@@ -81,17 +81,32 @@ Hooks.once("ready", () => {
 
   console.log("The Degenerate Inn | Ready. Cards are on the table.");
 
-  // Inject the sidebar button on load, then again after a short delay
-  // in case the Cards sidebar renders after the ready hook fires
+  // Initial injection attempts at various delays, in case the sidebar
+  // hasn’t fully rendered by the time "ready" fires.
   _injectDinnButton();
-  setTimeout(_injectDinnButton, 1000);
-  setTimeout(_injectDinnButton, 3000);
+  setTimeout(_injectDinnButton, 500);
+  setTimeout(_injectDinnButton, 1500);
+  setTimeout(_injectDinnButton, 4000);
+
+  // MutationObserver — watches the sidebar for any DOM change (tab switches,
+  // re-renders, etc.) and re-injects if our button disappeared.
+  // This is the nuclear option that covers every edge case.
+  const sidebar = document.querySelector("#sidebar");
+  if (sidebar) {
+    const observer = new MutationObserver(() => _injectDinnButton());
+    observer.observe(sidebar, { childList: true, subtree: true });
+  }
+
+  // Also inject a persistent launcher button into the right sidebar tab bar
+  // so players always have a way to open the inn even on non-Cards tabs.
+  _injectDinnTab();
 });
 
 // ─── UI Injection ─────────────────────────────────────────────────────────────
 
+/** Inject a button inside the Cards sidebar panel content area. */
 function _injectDinnButton() {
-  // Try ui.cards first (works in v12 + v13), fall back to direct DOM query
+  // Locate the Cards panel element across v12/v13 structures
   let el = null;
   if (ui.cards) {
     el = ui.cards.element instanceof HTMLElement
@@ -101,7 +116,10 @@ function _injectDinnButton() {
   if (!el) el = document.querySelector("#cards");
   if (!el) return;
 
-  // Don't add twice
+  // Only inject if the panel is currently visible
+  if (el.style.display === "none" || el.hidden) return;
+
+  // Don’t add twice
   if (el.querySelector(".dinn-open-btn")) return;
 
   const btn = document.createElement("button");
@@ -109,39 +127,21 @@ function _injectDinnButton() {
   btn.type          = "button";
   btn.title         = "Open The Degenerate Inn";
   btn.innerHTML     = `<i class="fas fa-diamond"></i> The Degenerate Inn`;
-  btn.style.cssText = "width:100%;margin-top:4px;";
+  btn.style.cssText = "width:calc(100% - 8px);margin:4px 4px 0;display:block;";
   btn.addEventListener("click", () => new LobbyApp().render(true));
 
-  // Try every known selector across v12 / v13 sidebar HTML structures
-  const footer = el.querySelector(".directory-footer") ?? el.querySelector("footer");
-  const header = el.querySelector(".directory-header") ?? el.querySelector("header");
+  // Try every known selector for v12/v13 sidebar header structures
+  const header = el.querySelector("header")
+    ?? el.querySelector(".directory-header")
+    ?? el.querySelector(".application-header");
+  const footer = el.querySelector("footer")
+    ?? el.querySelector(".directory-footer");
 
-  if (footer)      footer.before(btn);
-  else if (header) header.after(btn);
-  else             el.appendChild(btn);
+  if (header)      header.after(btn);
+  else if (footer) footer.before(btn);
+  else             el.prepend(btn);
 
   console.log("The Degenerate Inn | Cards sidebar button injected.");
 }
 
-// All render hook variants — whichever one Foundry fires, we catch it
-Hooks.on("renderCardsDirectory", () => _injectDinnButton());   // v12
-Hooks.on("renderCardDirectory",  () => _injectDinnButton());   // v13
-Hooks.on("renderSidebar",        () => _injectDinnButton());   // fallback
-
-// Also inject on sidebar tab change
-Hooks.on("changeSidebarTab", () => _injectDinnButton());
-
-// Also inject into the scene controls toolbar (always visible)
-Hooks.on("getSceneControlButtons", (controls) => {
-  // Add to the token control group so it’s always available
-  const tokenGroup = controls.find(c => c.name === "token");
-  if (tokenGroup) {
-    tokenGroup.tools.push({
-      name:    "degenerate-inn",
-      title:   "The Degenerate Inn",
-      icon:    "fas fa-diamond",
-      button:  true,
-      onClick: () => new LobbyApp().render(true),
-    });
-  }
-});
+/*
