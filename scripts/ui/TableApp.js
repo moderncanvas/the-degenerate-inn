@@ -38,6 +38,7 @@ Hooks.once("init", () => {
       this._gameType  = gameType;
       this._gameState = new GameState(journalId);
       this._hookId    = null;
+      this._stagedBet = 0;  // Accumulated via chip clicks — client-side only, resets on placement
     }
 
     static DEFAULT_OPTIONS = {
@@ -54,6 +55,8 @@ Hooks.once("init", () => {
         ],
       },
       actions: {
+        addChip:           TableApp._onAddChip,
+        clearBet:          TableApp._onClearBet,
         sitDown:           TableApp._onSitDown,
         leaveTable:        TableApp._onLeaveTable,
         placeBet:          TableApp._onPlaceBet,
@@ -232,6 +235,34 @@ Hooks.once("init", () => {
       const minRaise  = myPlayer && state.gameType === "poker" ? PokerGame.minRaise(state, myUserId) : 0;
       const canCheck  = myPlayer && state.gameType === "poker" ? PokerGame.canCheck(state, myUserId) : false;
 
+      // ── Chip rack for betting ────────────────────────────────────────────────
+      const CHIP_DENOMS = [1, 5, 25, 100, 500];
+      const chipDenominations = CHIP_DENOMS.map(v => ({
+        value:    v,
+        // Disable the chip if adding it would exceed the player's remaining chips
+        canAfford: !myPlayer || (this._stagedBet + v) <= myPlayer.chips,
+      }));
+
+      // ── Dealer hand value for Blackjack ─────────────────────────────────────
+      let dealerValueDisplay = null;
+      if (state.gameType === "blackjack") {
+        const allDealerCards  = state.dealer?.displayCards ?? [];
+        const faceUpCards     = allDealerCards.filter(c => !c.faceDown);
+        if (faceUpCards.length > 0) {
+          const visibleValue = DeckManager.blackjackHandValue(faceUpCards);
+          const hasHidden    = allDealerCards.some(c => c.faceDown);
+          if (isGM) {
+            const totalValue = DeckManager.blackjackHandValue(allDealerCards);
+            dealerValueDisplay = hasHidden
+              ? `${totalValue} (${visibleValue} showing)`
+              : String(totalValue);
+          } else {
+            // Players see face-up value with a "?" for the hole card
+            dealerValueDisplay = hasHidden ? `${visibleValue} + ?` : String(visibleValue);
+          }
+        }
+      }
+
       return {
         state,
         players,
@@ -257,6 +288,11 @@ Hooks.once("init", () => {
         PHASE:       GAME_PHASE,
         STREET:      POKER_STREET,
         STATUS:      PLAYER_STATUS,
+        // Betting UI
+        chipDenominations,
+        stagedBet:   this._stagedBet,
+        // Blackjack dealer value
+        dealerValueDisplay,
       };
     }
 
@@ -454,11 +490,22 @@ Hooks.once("init", () => {
       this.close();
     }
 
+    static _onAddChip(event, target) {
+      const value = parseInt(target.dataset.value || 0);
+      if (!value || value <= 0) return;
+      this._stagedBet = (this._stagedBet || 0) + value;
+      this.render();
+    }
+
+    static _onClearBet(event, target) {
+      this._stagedBet = 0;
+      this.render();
+    }
+
     static async _onPlaceBet(event, target) {
-      const betInput = this.element.querySelector(".bet-input");
-      const amount   = parseInt(betInput?.value) || 0;
+      const amount = this._stagedBet || 0;
       if (amount <= 0) {
-        ui.notifications.warn("Enter a valid bet amount.");
+        ui.notifications.warn("Click chips to build your bet first.");
         return;
       }
 
@@ -467,6 +514,8 @@ Hooks.once("init", () => {
       } else {
         game.degenerateInn.socket.requestPlaceBet({ tableId: this._tableId, userId: game.userId, amount });
       }
+
+      this._stagedBet = 0; // Reset after placing
     }
 
     static async _onDeal(event, target) {
@@ -599,58 +648,4 @@ Hooks.once("init", () => {
       await this._gameState.set(resolved);
     }
 
-    static async _onNewHand(event, target) {
-      if (!game.user.isGM) return;
-      let state = await this._gameState.get();
-
-      const handIds = state.players.map(p => p.handId).filter(Boolean);
-      await DeckManager.fullReset(state.deckId, handIds, [state.communityPileId].filter(Boolean));
-
-      if (state.gameType === "highcard")  state = HighCardGame.prepareNewHand(state);
-      if (state.gameType === "blackjack") state = BlackjackGame.prepareNewHand(state);
-      if (state.gameType === "poker")     state = PokerGame.prepareNewHand(state);
-
-      await this._gameState.set(state);
-      this._sendChatMessage("🃏 A new hand has begun at The Degenerate Inn.");
-    }
-
-    static async _onDistributeChips(event, target) {
-      if (!game.user.isGM) return;
-      const state  = await this._gameState.get();
-      const amount = await ChipManager.showDistributeDialog(state);
-      if (!amount) return;
-
-      for (const player of state.players) {
-        player.chips = amount;
-      }
-      await this._gameState.set(state);
-      ui.notifications.info(`Distributed ${amount} chips to all players.`);
-    }
-
-    // ─── Helpers ───────────────────────────────────────────────────────────────
-
-    /** Send a player action — to GM via socket if player, or handle locally if GM. */
-    _sendPlayerAction(action, amount = 0) {
-      const payload = { tableId: this._tableId, userId: game.userId, action, amount };
-      if (game.user.isGM) {
-        this._gmHandleAction(payload);
-      } else {
-        game.degenerateInn.socket.requestAction(payload);
-      }
-    }
-
-    _sendChatMessage(content) {
-      ChatMessage.create({
-        content: `<div class="degenerate-inn-chat"><i class="fas fa-gem"></i> ${content}</div>`,
-        speaker: { alias: "The Degenerate Inn" },
-      });
-    }
-
-    _postChatUpdates(state) {
-      // Post any pending chat messages derived from state changes
-      // (called after action processing)
-    }
-  };
-
-  console.log("The Degenerate Inn | TableApp class registered.");
-});
+    static async _onNewHa
