@@ -22,10 +22,8 @@
       {{#if (eq gameType "blackjack")}}
       <div class="dinn-dealer-label">
         <i class="fas fa-user-tie"></i> Dealer
-        {{#if isGM}}
-        <span class="dinn-hand-value">
-          {{#each dealerCards}}{{#unless faceDown}}{{../dealerValue}}{{/unless}}{{/each}}
-        </span>
+        {{#if dealerValueDisplay}}
+        <span class="dinn-hand-value dinn-dealer-value">{{dealerValueDisplay}}</span>
         {{/if}}
       </div>
       <div class="dinn-card-row dinn-dealer-cards">
@@ -143,14 +141,40 @@
   <!-- ─── Action Bar ─────────────────────────────────────────────────── -->
   <div class="dinn-action-bar">
 
-    <!-- Bet Input (shown during betting phase) -->
+    <!-- ── Chip Rack Betting (shown during betting phase) ────────────── -->
     {{#if actions.showBet}}
-    <div class="dinn-bet-controls">
-      <label>Your bet:</label>
-      <input class="bet-input" type="number" min="1" value="{{#if myPlayer}}{{myPlayer.chips}}{{else}}10{{/if}}" max="{{#if myPlayer}}{{myPlayer.chips}}{{else}}999{{/if}}">
-      <button type="button" data-action="placeBet" class="dinn-btn-primary">
-        <i class="fas fa-coins"></i> Place Bet
-      </button>
+    <div class="dinn-chip-betting">
+      <div class="dinn-chip-rack">
+        {{#each chipDenominations}}
+        <button type="button"
+                class="dinn-poker-chip dinn-chip-{{value}}"
+                data-action="addChip"
+                data-value="{{value}}"
+                title="Add {{value}} chips"
+                {{#unless canAfford}}disabled{{/unless}}>
+          <span class="dinn-chip-value">{{value}}</span>
+        </button>
+        {{/each}}
+      </div>
+      <div class="dinn-bet-staging">
+        <div class="dinn-staged-amount">
+          <i class="fas fa-coins"></i>
+          <span class="dinn-staged-total">{{stagedBet}}</span>
+          <span class="dinn-staged-label">bet</span>
+        </div>
+        <div class="dinn-bet-actions">
+          {{#if stagedBet}}
+          <button type="button" data-action="clearBet" class="dinn-btn-secondary dinn-btn-sm">
+            <i class="fas fa-times"></i>
+          </button>
+          <button type="button" data-action="placeBet" class="dinn-btn-primary">
+            <i class="fas fa-check"></i> Place Bet
+          </button>
+          {{else}}
+          <span class="dinn-chip-hint">← Click chips to bet</span>
+          {{/if}}
+        </div>
+      </div>
     </div>
     {{/if}}
 
@@ -208,28 +232,10 @@
       {{/if}}
       {{#if actions.showDealFlop}}
       <button type="button" data-action="dealFlop" class="dinn-btn-primary">
-        <i class="fas fa-cards"></i> Deal Flop
+        <i class="fas fa-layer-group"></i> Deal Flop
       </button>
       {{/if}}
       {{#if actions.showDealTurn}}
       <button type="button" data-action="dealTurn" class="dinn-btn-primary">
-        <i class="fas fa-cards"></i> Deal Turn
-      </button>
-      {{/if}}
-      {{#if actions.showDealRiver}}
-      <button type="button" data-action="dealRiver" class="dinn-btn-primary">
-        <i class="fas fa-cards"></i> Deal River
-      </button>
-      {{/if}}
-      {{#if actions.showShowdown}}
-      <button type="button" data-action="showdown" class="dinn-btn-warning">
-        <i class="fas fa-trophy"></i> Showdown
-      </button>
-      {{/if}}
-      {{#if actions.showNewHand}}
-      <button type="button" data-action="newHand" class="dinn-btn-primary">
-        <i class="fas fa-redo"></i> New Hand
-      </button>
-      {{/if}}
-      {{#if actions.showDistribute}}
-      <button type="button" 
+        <i class="fas fa-layer-group"></i> Deal Turn
+    
