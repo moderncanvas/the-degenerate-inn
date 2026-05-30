@@ -103,9 +103,15 @@
 
         <!-- Chips + bet -->
         <div class="dinn-seat-footer">
-          <span class="dinn-chips"><i class="fas fa-coins"></i> {{chips}}</span>
+          <div class="dinn-chip-display">
+            <i class="fas fa-coins dinn-chip-icon"></i>
+            <span class="dinn-chip-count">{{chips}}</span>
+            <span class="dinn-chip-label">chips</span>
+          </div>
           {{#if currentBet}}
-          <span class="dinn-bet">Bet: {{currentBet}}</span>
+          <div class="dinn-bet-display">
+            <i class="fas fa-arrow-up"></i> Bet: <strong>{{currentBet}}</strong>
+          </div>
           {{/if}}
           {{#if handValue}}
           <span class="dinn-hand-value">{{handValue}}</span>
@@ -226,14 +232,4 @@
       </button>
       {{/if}}
       {{#if actions.showDistribute}}
-      <button type="button" data-action="distributeChips" class="dinn-btn-secondary">
-        <i class="fas fa-coins"></i> Chips
-      </button>
-      {{/if}}
-    </div>
-    {{/if}}
-
-  </div><!-- /.dinn-action-bar -->
-
-</div><!-- /.dinn-table -->
-{{/if}}
+      <button type="button" 
