@@ -81,30 +81,38 @@ Hooks.once("ready", () => {
 
   console.log("The Degenerate Inn | Ready. Cards are on the table.");
 
-  // Initial injection attempts at various delays, in case the sidebar
-  // hasn’t fully rendered by the time "ready" fires.
+  // Nuclear option: attach a floating launch button directly to document.body.
+  // This cannot be wiped by any Foundry re-render because it lives outside
+  // the sidebar DOM entirely. Always visible, always clickable.
+  _injectFloatingButton();
+
+  // Also try the sidebar injection as a bonus (may or may not work in v13).
   _injectDinnButton();
-  setTimeout(_injectDinnButton, 500);
-  setTimeout(_injectDinnButton, 1500);
-  setTimeout(_injectDinnButton, 4000);
-
-  // MutationObserver — watches the sidebar for any DOM change (tab switches,
-  // re-renders, etc.) and re-injects if our button disappeared.
-  // This is the nuclear option that covers every edge case.
-  const sidebar = document.querySelector("#sidebar");
-  if (sidebar) {
-    const observer = new MutationObserver(() => _injectDinnButton());
-    observer.observe(sidebar, { childList: true, subtree: true });
-  }
-
-  // Also inject a persistent launcher button into the right sidebar tab bar
-  // so players always have a way to open the inn even on non-Cards tabs.
-  _injectDinnTab();
+  setTimeout(_injectDinnButton, 1000);
+  setTimeout(_injectDinnButton, 3000);
 });
 
 // ─── UI Injection ─────────────────────────────────────────────────────────────
 
-/** Inject a button inside the Cards sidebar panel content area. */
+/**
+ * Inject a floating launch button directly onto document.body.
+ * Fixed-position, always visible, completely immune to Foundry re-renders.
+ */
+function _injectFloatingButton() {
+  if (document.querySelector(".dinn-launch-fab")) return;
+
+  const btn = document.createElement("button");
+  btn.className = "dinn-launch-fab";
+  btn.type      = "button";
+  btn.title     = "The Degenerate Inn";
+  btn.innerHTML = `<i class="fas fa-diamond"></i>`;
+  btn.addEventListener("click", () => new LobbyApp().render(true));
+
+  document.body.appendChild(btn);
+  console.log("The Degenerate Inn | Floating button injected.");
+}
+
+/** Inject a button inside the Cards sidebar panel content area (bonus attempt). */
 function _injectDinnButton() {
   // Locate the Cards panel element across v12/v13 structures
   let el = null;
@@ -135,13 +143,4 @@ function _injectDinnButton() {
     ?? el.querySelector(".directory-header")
     ?? el.querySelector(".application-header");
   const footer = el.querySelector("footer")
-    ?? el.querySelector(".directory-footer");
-
-  if (header)      header.after(btn);
-  else if (footer) footer.before(btn);
-  else             el.prepend(btn);
-
-  console.log("The Degenerate Inn | Cards sidebar button injected.");
-}
-
-/*
+    ?? el.querySelector(".direct
