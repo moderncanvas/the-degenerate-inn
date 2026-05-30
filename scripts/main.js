@@ -81,12 +81,15 @@ Hooks.once("ready", () => {
 
   console.log("The Degenerate Inn | Ready. Cards are on the table.");
 
-  // Nuclear option: attach a floating launch button directly to document.body.
-  // This cannot be wiped by any Foundry re-render because it lives outside
-  // the sidebar DOM entirely. Always visible, always clickable.
+  // Floating button on document.body — immune to Foundry re-renders.
+  // Positioned in the lower-left canvas area, clear of sidebar and hotbar.
   _injectFloatingButton();
 
-  // Also try the sidebar injection as a bonus (may or may not work in v13).
+  // Button in the chat panel — always visible since chat is the default tab.
+  _injectChatButton();
+  setTimeout(_injectChatButton, 500);
+
+  // Bonus: try sidebar injection too.
   _injectDinnButton();
   setTimeout(_injectDinnButton, 1000);
   setTimeout(_injectDinnButton, 3000);
@@ -96,6 +99,7 @@ Hooks.once("ready", () => {
 
 /**
  * Inject a floating launch button directly onto document.body.
+ * Positioned in the lower-left canvas area, well clear of sidebar and hotbar.
  * Fixed-position, always visible, completely immune to Foundry re-renders.
  */
 function _injectFloatingButton() {
@@ -105,11 +109,31 @@ function _injectFloatingButton() {
   btn.className = "dinn-launch-fab";
   btn.type      = "button";
   btn.title     = "The Degenerate Inn";
-  btn.innerHTML = `<i class="fas fa-diamond"></i>`;
+  btn.innerHTML = `<i class="fas fa-gem"></i> Degenerate Inn`;
   btn.addEventListener("click", () => new LobbyApp().render(true));
 
   document.body.appendChild(btn);
   console.log("The Degenerate Inn | Floating button injected.");
+}
+
+/**
+ * Inject a button at the top of the chat panel — the default active tab.
+ * Chat is always visible when Foundry loads, so this covers the common case.
+ */
+function _injectChatButton() {
+  const chatPanel = document.querySelector("#chat") ?? document.querySelector("section[id='chat']");
+  if (!chatPanel) return;
+  if (chatPanel.querySelector(".dinn-chat-btn")) return;
+
+  const btn = document.createElement("button");
+  btn.className = "dinn-chat-btn";
+  btn.type      = "button";
+  btn.innerHTML = `<i class="fas fa-gem"></i> Open The Degenerate Inn`;
+  btn.addEventListener("click", () => new LobbyApp().render(true));
+
+  // Put it right at the top of the chat panel, before anything else
+  chatPanel.prepend(btn);
+  console.log("The Degenerate Inn | Chat panel button injected.");
 }
 
 /** Inject a button inside the Cards sidebar panel content area (bonus attempt). */
@@ -121,26 +145,4 @@ function _injectDinnButton() {
       ? ui.cards.element
       : (ui.cards.element?.[0] ?? null);
   }
-  if (!el) el = document.querySelector("#cards");
-  if (!el) return;
-
-  // Only inject if the panel is currently visible
-  if (el.style.display === "none" || el.hidden) return;
-
-  // Don’t add twice
-  if (el.querySelector(".dinn-open-btn")) return;
-
-  const btn = document.createElement("button");
-  btn.className     = "dinn-open-btn";
-  btn.type          = "button";
-  btn.title         = "Open The Degenerate Inn";
-  btn.innerHTML     = `<i class="fas fa-diamond"></i> The Degenerate Inn`;
-  btn.style.cssText = "width:calc(100% - 8px);margin:4px 4px 0;display:block;";
-  btn.addEventListener("click", () => new LobbyApp().render(true));
-
-  // Try every known selector for v12/v13 sidebar header structures
-  const header = el.querySelector("header")
-    ?? el.querySelector(".directory-header")
-    ?? el.querySelector(".application-header");
-  const footer = el.querySelector("footer")
-    ?? el.querySelector(".direct
+  if (!el
