@@ -120,4 +120,28 @@ function _injectDinnButton() {
   else if (header) header.after(btn);
   else             el.appendChild(btn);
 
-  console.log("The Deg
+  console.log("The Degenerate Inn | Cards sidebar button injected.");
+}
+
+// All render hook variants — whichever one Foundry fires, we catch it
+Hooks.on("renderCardsDirectory", () => _injectDinnButton());   // v12
+Hooks.on("renderCardDirectory",  () => _injectDinnButton());   // v13
+Hooks.on("renderSidebar",        () => _injectDinnButton());   // fallback
+
+// Also inject on sidebar tab change
+Hooks.on("changeSidebarTab", () => _injectDinnButton());
+
+// Also inject into the scene controls toolbar (always visible)
+Hooks.on("getSceneControlButtons", (controls) => {
+  // Add to the token control group so it’s always available
+  const tokenGroup = controls.find(c => c.name === "token");
+  if (tokenGroup) {
+    tokenGroup.tools.push({
+      name:    "degenerate-inn",
+      title:   "The Degenerate Inn",
+      icon:    "fas fa-diamond",
+      button:  true,
+      onClick: () => new LobbyApp().render(true),
+    });
+  }
+});
