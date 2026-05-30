@@ -574,4 +574,7 @@
   margin-right: 4px;
 }
 
-/* ─── Sidebar button ──────────────────────────────────────────────────�
+/* ─── Floating launch button (always visible, fixed to screen) ───────────── */
+.dinn-launch-fab {
+  position: fixed;
+  bottom: 58px;         /* si
