@@ -574,7 +574,7 @@
   margin-right: 4px;
 }
 
-/* ─── Floating launch button (always visible, fixed to screen) ───────────── */
+/* ─── Floating launch button (fixed to lower-left canvas, clear of all UI) ── */
 .dinn-launch-fab {
-  position: fixed;
-  bottom: 58px;         /* si
+  position: fixed !important;
+  bottom: 140px !important;   /* well a
